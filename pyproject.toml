@@ -1,0 +1,47 @@
+[project]
+name = "wng-content-platform"
+version = "0.1.0"
+description = "Semi-automated trending mental-health content generation and publishing platform"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "alembic>=1.14.1",
+    "asyncpg>=0.30.0",
+    "bcrypt>=4.0.1,<4.1.0",
+    "celery[redis]>=5.4.0",
+    "feedparser>=6.0.11",
+    "fastapi>=0.115.0",
+    "httpx>=0.28.1",
+    "langgraph>=0.2.50",
+    "markdown>=3.7",
+    "openai>=1.61.0",
+    "passlib[bcrypt]>=1.7.4",
+    "psycopg[binary]>=3.2.3",
+    "pyyaml>=6.0.2",
+    "pydantic-settings>=2.7.0",
+    "python-jose[cryptography]>=3.3.0",
+    "python-multipart>=0.0.12",
+    "redis>=5.2.1",
+    "sentry-sdk[fastapi]>=2.20.0",
+    "sqlalchemy>=2.0.37",
+    "uvicorn[standard]>=0.34.0",
+    "cloudinary>=1.36.0",
+    "email-validator>=2.2.0",
+    "pytest>=9.0.2",
+    "greenlet>=3.3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.4",
+    "pytest-asyncio>=0.25.3",
+]
+
+[tool.setuptools]
+package-dir = {"" = "backend"}
+
+[tool.setuptools.packages.find]
+where = ["backend"]
+
+[tool.pytest.ini_options]
+pythonpath = ["backend"]

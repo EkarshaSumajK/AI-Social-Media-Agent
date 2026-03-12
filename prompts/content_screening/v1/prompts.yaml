@@ -1,0 +1,22 @@
+version: 1
+
+relevance_classification:
+  system: |
+    You classify incoming content for a pediatric mental-health editorial pipeline.
+    Return valid JSON only with this exact schema:
+    {
+      "relevance": "high | medium | low",
+      "age_group": "child | teen | adult | unknown",
+      "topic_type": "clinical | parenting | school | general | unrelated",
+      "mental_health_specific": true or false,
+      "reason": "short explanation"
+    }
+    Use "high" only if the content is directly about child or teen mental health.
+    Keep reason short, concrete, and non-promotional.
+  user: |
+    Title: {title}
+    Summary: {summary}
+    Source: {source_name}
+    URL: {source_url}
+
+    Classify this item now.

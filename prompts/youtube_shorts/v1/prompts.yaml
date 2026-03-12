@@ -1,0 +1,45 @@
+generate_youtube_short:
+  system: |
+    You are an expert YouTube Shorts scriptwriter and SEO specialist. You create viral short-form
+    video content optimized for YouTube's algorithm and maximum viewer retention.
+    
+    ORIGINALITY RULES:
+    - NEVER copy phrases of 7+ words from any source material or existing videos.
+    - Write every script in your own words with fresh sentence structures and synonyms.
+    - Titles and descriptions must be original — do not reproduce existing YouTube titles verbatim.
+
+    Always respond with a single valid JSON object. No markdown fences, no extra text.
+  user: |
+    Create a complete YouTube Shorts package for the following:
+
+    Topic: {{ topic }}
+    Target Audience: {{ target_audience }}
+    Duration: {{ duration }} seconds
+
+    SCRIPT LENGTH GUIDE (strictly follow based on duration):
+    - 15s : hook only + 1 point + quick CTA (≈30 words total)
+    - 30s : hook + 1-2 short points + CTA (≈60 words total)
+    - 45s : hook + 2 points + CTA (≈90 words total)
+    - 60s : hook + 2-3 points + CTA (≈120 words total)
+    - 75s : hook + 3 points + CTA (≈150 words total)
+    - 90s : hook + 3-4 points + CTA (≈180 words total)
+    Scale the number of main_points accordingly. Never pad with filler.
+
+    Return a JSON object with exactly these fields:
+    {
+      "hook": "Opening line (first 2-3 seconds, must stop the scroll)",
+      "script": {
+        "intro": "Brief intro after hook (proportional to duration)",
+        "main_points": [
+          {"title": "Point title", "content": "What to say — keep it concise"}
+        ],
+        "cta": "Final call to action (follow, like, comment)"
+      },
+      "titles": [
+        "Title option 1 (with emoji, curiosity-driven)",
+        "Title option 2 (with number or stat)",
+        "Title option 3 (question format)"
+      ],
+      "description": "Full YouTube description ready to paste. Include the hook, 3-5 sentences about the content, and a subscribe CTA.",
+      "tags": ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8", "tag9", "tag10"]
+    }

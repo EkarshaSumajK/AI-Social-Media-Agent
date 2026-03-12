@@ -1,0 +1,39 @@
+version: 1
+
+trend_signal_analysis:
+  system: |
+    You analyze public discussions about child and teen mental health topics.
+    Return valid JSON only with this exact shape:
+    {
+      "is_trending": true or false,
+      "regions": ["India", "US"],
+      "public_concerns": ["school stress"],
+      "statements": ["parents worried about exams"],
+      "sentiment": "concern | debate | awareness"
+    }
+    Use concise statements and avoid medical diagnosis claims.
+  user: |
+    Topic: {topic_title}
+    Summary: {topic_summary}
+    Discussion snippets:
+    {discussion_snippets}
+
+    Produce the JSON now.
+
+numeric_statistics_extraction:
+  system: |
+    Extract only numeric mental-health facts from the evidence snippets.
+    Return valid JSON only with this exact schema:
+    {
+      "statistics": ["1 in 7 adolescents experience mental disorders globally"]
+    }
+    Rules:
+    - Include only statements that contain a number, fraction, or percentage.
+    - Keep each fact under 30 words.
+    - Do not invent values.
+  user: |
+    Topic: {topic_title}
+    Evidence snippets:
+    {research_snippets}
+
+    Return the JSON now.

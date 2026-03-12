@@ -1,0 +1,47 @@
+version: 1
+default_score: 0
+minimum_allowed_score: 70
+
+sources:
+  World Health Organization:
+    score: 100
+    aliases:
+      - world health organization
+      - who
+    domains:
+      - who.int
+  Centers for Disease Control and Prevention:
+    score: 95
+    aliases:
+      - centers for disease control and prevention
+      - cdc
+    domains:
+      - cdc.gov
+  National Institutes of Health (NIH News):
+    score: 95
+    aliases:
+      - national institutes of health
+      - nih
+    domains:
+      - nih.gov
+  Ministry of Health and Family Welfare:
+    score: 90
+    aliases:
+      - ministry of health and family welfare
+      - mohfw
+    domains:
+      - mohfw.gov.in
+  Press Information Bureau:
+    score: 95
+    aliases:
+      - press information bureau
+      - pib
+    domains:
+      - pib.gov.in
+  National Institute of Mental Health and Neurosciences:
+    score: 90
+    aliases:
+      - national institute of mental health and neurosciences
+      - nimhans
+    domains:
+      - nimhans.ac.in
