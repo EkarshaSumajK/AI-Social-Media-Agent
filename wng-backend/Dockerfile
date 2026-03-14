@@ -5,8 +5,6 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
 COPY app ./app
-COPY alembic ./alembic
-COPY alembic.ini ./
 COPY main.py ./
 
 RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir .
