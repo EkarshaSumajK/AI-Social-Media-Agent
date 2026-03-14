@@ -2,7 +2,6 @@
 name = "wng-content-platform"
 version = "0.1.0"
 description = "Semi-automated trending mental-health content generation and publishing platform"
-readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.14.1",
@@ -37,11 +36,13 @@ dev = [
     "pytest-asyncio>=0.25.3",
 ]
 
-[tool.setuptools]
-package-dir = {"" = "backend"}
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = ["backend"]
+where = ["."]
+include = ["app*"]
 
 [tool.pytest.ini_options]
-pythonpath = ["backend"]
+pythonpath = ["."]

@@ -6,11 +6,13 @@ WORKDIR /app
 # Install supervisor to manage multiple processes
 RUN apt-get update && apt-get install -y supervisor && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml uv.lock ./
+# Copy requirements and install dependencies
+COPY requirements.txt ./
+RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
 COPY app ./app
 COPY main.py ./
-
-RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir .
 
 # Copy supervisor config
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
