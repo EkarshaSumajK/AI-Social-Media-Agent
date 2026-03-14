@@ -169,7 +169,7 @@ export default function DraftDetailPage() {
         social_posts: form.social_posts,
       };
 
-      const updated = await updateDraft(draft.id, payload);
+      const updated = await updateDraft(draft.id, payload as unknown as Partial<Article>);
       setDraft(updated);
       setForm(mapDraftToForm(updated));
       setMessage('Draft saved.');

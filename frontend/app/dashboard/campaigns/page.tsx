@@ -64,7 +64,7 @@ export default function CampaignsPage() {
     setError(null);
 
     try {
-      const result = await generateCampaignContent(id);
+      const result = await generateCampaignContent(id) as { pieces_created: number };
       setPiecesCreatedByCampaign((prev) => ({
         ...prev,
         [id]: result.pieces_created,

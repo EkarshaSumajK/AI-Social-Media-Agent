@@ -386,10 +386,10 @@ function HistoryPanel({ items }: { items: RegionalHistoryItem[] }) {
             >
               <div className="flex items-center gap-3 min-w-0">
                 <span className="flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] text-ink-faint capitalize">
-                  {typeIcons[item.request_type]} {item.request_type.replace('_', ' ')}
+                  {typeIcons[item.request_type as keyof typeof typeIcons]} {String(item.request_type).replace('_', ' ')}
                 </span>
-                <span className="text-[11px] font-semibold text-ink capitalize">{item.region}</span>
-                {item.industry && item.industry !== 'general' && (
+                <span className="text-[11px] font-semibold text-ink capitalize">{String(item.region)}</span>
+                {typeof item.industry === 'string' && item.industry !== 'general' && (
                   <span className="text-[11px] text-ink-faint capitalize">{item.industry.replace('_', ' ')}</span>
                 )}
               </div>
@@ -400,7 +400,7 @@ function HistoryPanel({ items }: { items: RegionalHistoryItem[] }) {
                 {expanded === item.id ? <ChevronUp size={13} className="text-ink-faint" /> : <ChevronDown size={13} className="text-ink-faint" />}
               </div>
             </button>
-            {expanded === item.id && item.localised_content && (
+            {expanded === item.id && typeof item.localised_content === 'string' && (
               <div className="border-t border-white/[0.04] px-4 pb-4 pt-3">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-ink-faint mb-2">Localised Output</p>
                 <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink-soft line-clamp-6">{item.localised_content}</p>

@@ -148,18 +148,18 @@ export default function CreateCampaignPage() {
                 <div className="flex flex-wrap gap-2">
                   {SOCIAL_PLATFORMS.map((platform) => (
                     <label
-                      key={platform}
+                      key={platform.value}
                       className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-sm transition-colors hover:border-apple-blue/30 has-[:checked]:border-apple-blue/40 has-[:checked]:bg-apple-blue/10"
                     >
                       <input
                         type="checkbox"
-                        checked={platforms.includes(platform)}
-                        onChange={() => togglePlatform(platform)}
+                        checked={platforms.includes(platform.value)}
+                        onChange={() => togglePlatform(platform.value)}
                         disabled={loading}
                         className="h-4 w-4 rounded border-white/[0.08] bg-transparent text-apple-blue"
                       />
                       <span className="text-ink">
-                        {SOCIAL_PLATFORM_LABELS[platform] || platform}
+                        {SOCIAL_PLATFORM_LABELS[platform.value] || platform.label}
                       </span>
                     </label>
                   ))}

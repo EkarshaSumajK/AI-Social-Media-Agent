@@ -67,7 +67,7 @@ const PLATFORM_STYLES: Record<string, { dot: string; badge: string }> = {
 export function Sidebar() {
   const pathname = usePathname();
   const user = getStoredUser<User>();
-  const { theme, toggle } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const platformKey = user?.platform ?? 'horizon';
   const platformStyle = PLATFORM_STYLES[platformKey] ?? PLATFORM_STYLES.horizon;
   const currentPlatform = PLATFORMS.find((platform) => platform.value === platformKey) ?? PLATFORMS[0];
@@ -140,7 +140,7 @@ export function Sidebar() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={toggle}
+          onClick={toggleTheme}
           className="h-8 w-full justify-start text-[12px] text-ink-soft hover:bg-white/[0.05] hover:text-ink group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
           title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
         >

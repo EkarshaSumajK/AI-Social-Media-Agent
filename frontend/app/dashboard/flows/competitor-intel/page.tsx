@@ -121,7 +121,7 @@ export default function CompetitorIntelFlowPage() {
                 value={platform}
                 onValueChange={setPlatform}
                 disabled={submitting}
-                options={SOCIAL_PLATFORMS.map((p) => ({ value: p, label: SOCIAL_PLATFORM_LABELS[p] || p }))}
+                options={SOCIAL_PLATFORMS.map((p) => ({ value: p.value, label: p.label }))}
               />
             </div>
             <div>

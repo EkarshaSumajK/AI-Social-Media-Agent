@@ -223,7 +223,7 @@ export async function paraphraseContent(content: string, style?: string, tone?: 
 export async function repurposeContent(data: {
   content: string;
   source_type: string;
-  target_format: string;
+  target_formats: string[];
 }): Promise<RepurposeResponse> {
   return request('/repurpose', { method: 'POST', body: JSON.stringify(data) });
 }

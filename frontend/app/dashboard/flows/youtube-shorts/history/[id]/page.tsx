@@ -96,14 +96,14 @@ export default function YoutubeShortHistoryDetailPage() {
 
             <OutputSection title="Script">
               <div className="space-y-4">
-                <p className="text-sm text-ink">{item.script.intro}</p>
-                {item.script.main_points.map((pt, i) => (
+                <p className="text-sm text-ink">{(item.script as any).intro}</p>
+                {((item.script as any).main_points || []).map((pt: any, i: number) => (
                   <div key={i} className="rounded border border-white/[0.06] p-3">
                     <p className="mb-1 text-xs font-semibold text-apple-blue">{pt.title}</p>
                     <p className="text-sm text-ink">{pt.content}</p>
                   </div>
                 ))}
-                <p className="text-sm text-ink">{item.script.cta}</p>
+                <p className="text-sm text-ink">{(item.script as any).cta}</p>
               </div>
             </OutputSection>
 

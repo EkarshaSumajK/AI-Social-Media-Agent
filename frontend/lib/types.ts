@@ -387,13 +387,10 @@ export interface SwipeFile {
 
 // ─── Repurpose ───────────────────────────────────────────────────────────────
 
-export type RepurposeSourceType = 'blog' | 'linkedin' | 'twitter' | 'instagram' | 'youtube';
+export type RepurposeSourceType = 'article' | 'webinar' | 'blog' | 'linkedin' | 'twitter' | 'instagram' | 'youtube';
 
 export interface RepurposeResponse {
-  source_type: string;
-  target_format: string;
-  original_content: string;
-  repurposed_content: string;
+  results: Record<string, string | string[]>;
 }
 
 export const REPURPOSE_TARGET_FORMATS = [

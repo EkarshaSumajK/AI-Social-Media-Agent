@@ -17,7 +17,7 @@ export default function AuditPage() {
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchAudit(100);
+        const data = await fetchAudit() as AuditLog[];
         setLogs(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load audit log');
@@ -31,7 +31,7 @@ export default function AuditPage() {
   function formatEntityInfo(log: AuditLog) {
     const skip = ['id', 'action', 'created_at'];
     const parts: string[] = [];
-    const rec = log as Record<string, unknown>;
+    const rec = log as unknown as Record<string, unknown>;
     if (rec.entity_type) parts.push(`Type: ${rec.entity_type}`);
     if (rec.entity_id) parts.push(`ID: ${rec.entity_id}`);
     if (rec.actor_id != null) parts.push(`Actor: ${rec.actor_id}`);

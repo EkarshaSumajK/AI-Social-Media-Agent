@@ -9,7 +9,7 @@ import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { fetchCampaign, generateCampaignContent } from '@/lib/api';
-import type { CampaignPiece } from '@/lib/types';
+import type { Campaign, CampaignPiece } from '@/lib/types';
 
 const PHASE_ORDER = ['pre', 'during', 'post'] as const;
 
@@ -44,18 +44,7 @@ export default function CampaignDetailPage() {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [campaign, setCampaign] = useState<{
-    id: number;
-    title: string;
-    event_date: string | null;
-    goal: string | null;
-    audience_description?: string | null;
-    platforms?: string[] | null;
-    platform_entity: string;
-    status: string;
-    created_at: string;
-    pieces?: CampaignPiece[];
-  } | null>(null);
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
 
   async function loadCampaign() {
     setLoading(true);
@@ -110,7 +99,7 @@ export default function CampaignDetailPage() {
     setMessage(null);
 
     try {
-      const result = await generateCampaignContent(campaign.id);
+      const result = await generateCampaignContent(campaign.id) as { pieces_created: number };
       setMessage(`Generated ${result.pieces_created} pieces.`);
       await loadCampaign();
     } catch (err) {

@@ -57,6 +57,7 @@ function OutputSection({ title, children, copyText }: { title: string; children:
 }
 
 function ShortOutput({ short }: { short: YoutubeShortResponse }) {
+  const script = short.script as any;
   return (
     <div className="flex flex-col gap-4">
       {/* Hook */}
@@ -68,17 +69,17 @@ function ShortOutput({ short }: { short: YoutubeShortResponse }) {
       <OutputSection
         title="Script"
         copyText={[
-          short.script.intro,
-          ...(short.script.main_points || []).map((mp: { title: string; content: string }) => `${mp.title}:\n${mp.content}`),
-          short.script.cta,
+          script.intro,
+          ...(script.main_points || []).map((mp: { title: string; content: string }) => `${mp.title}:\n${mp.content}`),
+          script.cta,
         ].join('\n\n')}
       >
         <div className="flex flex-col gap-3">
           <div>
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-ocean">Intro</p>
-            <p className="text-sm leading-relaxed text-ink">{short.script.intro}</p>
+            <p className="text-sm leading-relaxed text-ink">{script.intro}</p>
           </div>
-          {(short.script.main_points || []).map((mp: { title: string; content: string }, i: number) => (
+          {(script.main_points || []).map((mp: { title: string; content: string }, i: number) => (
             <div key={i}>
               <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-moss">Point {i + 1} · {mp.title}</p>
               <p className="text-sm leading-relaxed text-ink">{mp.content}</p>
@@ -86,7 +87,7 @@ function ShortOutput({ short }: { short: YoutubeShortResponse }) {
           ))}
           <div>
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-ember">CTA</p>
-            <p className="text-sm leading-relaxed text-ink">{short.script.cta}</p>
+            <p className="text-sm leading-relaxed text-ink">{script.cta}</p>
           </div>
         </div>
       </OutputSection>

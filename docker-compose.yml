@@ -1,10 +1,8 @@
 services:
   postgres:
     image: postgres:16
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: wng_content
+    env_file:
+      - .env.db
     ports:
       - '5432:5432'
     volumes:
@@ -21,20 +19,20 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     env_file:
-      - .env
+      - .env.backend
     depends_on:
       - postgres
       - redis
     ports:
       - '8000:8000'
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --app-dir backend"
+    command: sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 --app-dir backend"
 
   worker:
     build:
       context: .
       dockerfile: backend/Dockerfile
     env_file:
-      - .env
+      - .env.backend
     depends_on:
       - backend
       - redis
@@ -45,7 +43,7 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     env_file:
-      - .env
+      - .env.backend
     depends_on:
       - backend
       - redis
@@ -55,8 +53,8 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-    environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
+    env_file:
+      - .env.frontend
     depends_on:
       - backend
     ports:

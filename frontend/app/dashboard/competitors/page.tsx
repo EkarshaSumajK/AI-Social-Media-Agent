@@ -139,8 +139,8 @@ export default function CompetitorsPage() {
                   onValueChange={setPlatform}
                   disabled={submitting}
                   options={SOCIAL_PLATFORMS.map((item) => ({
-                    value: item,
-                    label: SOCIAL_PLATFORM_LABELS[item] || item,
+                    value: item.value,
+                    label: item.label,
                   }))}
                 />
               </div>

@@ -64,7 +64,7 @@ const actionItems = [
 
 export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
   const router = useRouter();
-  const { theme, toggle } = useTheme();
+  const { theme, toggleTheme } = useTheme();
 
   function runCommand(command: () => void) {
     onOpenChange(false);
@@ -110,7 +110,7 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
         <CommandGroup heading="Settings">
           <CommandItem
             className="flex items-center gap-2"
-            onSelect={() => runCommand(toggle)}
+            onSelect={() => runCommand(toggleTheme)}
           >
             {theme === "dark" ? (
               <Sun size={16} className="text-ink-soft" />

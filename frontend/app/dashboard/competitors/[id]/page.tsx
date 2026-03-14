@@ -140,7 +140,7 @@ export default function CompetitorDetailPage() {
               <CardContent>
                 <dl className="grid gap-3 sm:grid-cols-3">
                   <InfoBlock label="Social Platform" value={labelizePlatform(competitor.platform)} />
-                  <InfoBlock label="Tracked By User ID" value={String(competitor.tracked_by)} />
+                  <InfoBlock label="Created By User ID" value={String(competitor.created_by)} />
                   <InfoBlock label="Profile URL" value={competitor.profile_url} />
                 </dl>
               </CardContent>

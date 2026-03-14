@@ -58,7 +58,7 @@ export default function HooksPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchHooks(categoryFilter || undefined);
+      const data = await fetchHooks({ category: categoryFilter || undefined });
       setHooks(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load hooks');
@@ -241,7 +241,7 @@ export default function HooksPage() {
                 value={createPlatform}
                 onValueChange={setCreatePlatform}
                 disabled={createSubmitting}
-                options={SOCIAL_PLATFORMS.map((value) => ({ value, label: labelize(value) }))}
+                options={SOCIAL_PLATFORMS.map((p) => ({ value: p.value, label: p.label }))}
               />
             </div>
 
@@ -279,7 +279,7 @@ export default function HooksPage() {
                 value={suggestPlatform}
                 onValueChange={setSuggestPlatform}
                 disabled={suggestSubmitting}
-                options={SOCIAL_PLATFORMS.map((value) => ({ value, label: labelize(value) }))}
+                options={SOCIAL_PLATFORMS.map((p) => ({ value: p.value, label: p.label }))}
               />
             </div>
 

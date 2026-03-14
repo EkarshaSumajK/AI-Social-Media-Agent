@@ -442,7 +442,7 @@ function PostCard({
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-ink-faint">
         <div className="flex items-center gap-1.5">
           <Clock size={11} />
-          <span>{formatScheduled(post.scheduled_for)}</span>
+          <span>{formatScheduled(post.scheduled_for ?? null)}</span>
         </div>
         {post.hashtags && post.hashtags.length > 0 && (
           <div className="flex flex-wrap gap-1">
@@ -478,7 +478,7 @@ export default function SchedulingPage() {
     setError(null);
     try {
       const [postsData, statsData] = await Promise.all([
-        fetchScheduledPosts(platformFilter || undefined, statusFilter || undefined),
+        fetchScheduledPosts({ platform: platformFilter || undefined, status: statusFilter || undefined }),
         fetchCalendarStats(),
       ]);
       setPosts(postsData);
