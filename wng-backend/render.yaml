@@ -1,0 +1,69 @@
+# Render.com deployment configuration
+services:
+  # Main API service
+  - type: web
+    name: wng-backend-api
+    env: python
+    buildCommand: pip install -e .
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: wng-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: wng-redis
+          property: connectionString
+
+  # Celery worker
+  - type: worker
+    name: wng-backend-worker
+    env: python
+    buildCommand: pip install -e .
+    startCommand: celery -A app.core.celery_app.celery_app worker --loglevel=info
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: wng-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: wng-redis
+          property: connectionString
+
+  # Celery beat scheduler
+  - type: worker
+    name: wng-backend-beat
+    env: python
+    buildCommand: pip install -e .
+    startCommand: celery -A app.core.celery_app.celery_app beat --loglevel=info
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: wng-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: wng-redis
+          property: connectionString
+
+  # Redis cache
+  - type: redis
+    name: wng-redis
+    ipAllowList: []
+
+# PostgreSQL database
+databases:
+  - name: wng-postgres
+    databaseName: wng_content
+    user: wng_user

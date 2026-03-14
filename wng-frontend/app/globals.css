@@ -1,0 +1,438 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME VARIABLES - LIGHT MODE ONLY
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* RGB components (no # prefix) so Tailwind opacity modifiers work */
+  --rgb-canvas: 255 255 255;
+  --rgb-surface: 248 249 250;
+  --rgb-surface-2: 241 243 244;
+  --rgb-surface-3: 229 231 235;
+  --rgb-ink: 17 24 39;
+  --rgb-ink-soft: 75 85 99;
+  --rgb-ink-faint: 156 163 175;
+
+  /* Computed shorthands */
+  --color-canvas: rgb(255 255 255);
+  --color-surface: rgb(248 249 250);
+  --color-surface-2: rgb(241 243 244);
+  --color-ink: rgb(17 24 39);
+  --color-ink-soft: rgb(75 85 99);
+  --color-ink-faint: rgb(156 163 175);
+
+  /* Accent: Apple Blue */
+  --accent: 0 122 255;
+  --accent-dim: rgba(0, 122, 255, 0.12);
+  --accent-muted: rgba(0, 122, 255, 0.08);
+
+  /* Component-level tokens */
+  --sidebar-bg: #ffffff;
+  --sidebar-border: rgba(0, 0, 0, 0.08);
+  --sidebar-hover-bg: rgba(0, 0, 0, 0.05);
+  --sidebar-active-bg: rgba(0, 122, 255, 0.15);
+  --sidebar-active-text: #007AFF;
+
+  --app-bg: #ffffff;
+
+  --card-bg: rgba(255, 255, 255, 0.8);
+  --card-border: rgba(0, 0, 0, 0.1);
+  --card-shine: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, transparent 40%);
+  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+
+  --glass-border-sm: rgba(0, 0, 0, 0.06);
+  --glass-border: rgba(0, 0, 0, 0.07);
+  --glass-border-md: rgba(0, 0, 0, 0.09);
+  --glass-border-lg: rgba(0, 0, 0, 0.12);
+  --glass-bg-xs: rgba(255, 255, 255, 0.03);
+  --glass-bg-sm: rgba(255, 255, 255, 0.04);
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-bg-md: rgba(255, 255, 255, 0.08);
+  --glass-bg-lg: rgba(255, 255, 255, 0.10);
+
+  --btn-sec-border: rgba(255, 255, 255, 0.10);
+  --btn-sec-bg: rgba(255, 255, 255, 0.06);
+  --btn-sec-hover-bg: rgba(255, 255, 255, 0.09);
+  --btn-sec-hover-border: rgba(255, 255, 255, 0.18);
+  --btn-ghost-color: rgb(148 163 184);
+
+  --input-bg: rgb(30 36 44);
+  --input-border: rgba(255, 255, 255, 0.08);
+  --input-placeholder: rgb(100 116 139);
+
+  --scrollbar-thumb: rgba(255, 255, 255, 0.12);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.22);
+
+  --page-header-bg: rgba(0, 122, 255, 0.06);
+  --page-header-border: rgba(255, 255, 255, 0.07);
+
+  --radius-card: 0.75rem;
+
+  /* Legacy aliases */
+  --bg-1: #0f1216;
+  --bg-2: #161a20;
+  --bg-3: #1e2430;
+  --ink-strong: rgb(241 245 249);
+
+  /* Apple system font stack — San Francisco on macOS/iOS */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* ── Light theme overrides ──────────────────────────────────────────────── */
+.light {
+  --rgb-canvas: 250 250 250;
+  --rgb-surface: 255 255 255;
+  --rgb-surface-2: 248 250 252;
+  --rgb-surface-3: 241 245 249;
+  --rgb-ink: 15 23 42;
+  --rgb-ink-soft: 71 85 105;
+  --rgb-ink-faint: 148 163 184;
+
+  --color-canvas: rgb(250 250 250);
+  --color-surface: rgb(255 255 255);
+  --color-surface-2: rgb(248 250 252);
+  --color-ink: rgb(15 23 42);
+  --color-ink-soft: rgb(71 85 105);
+  --color-ink-faint: rgb(148 163 184);
+
+  --sidebar-bg: #f5f5f7;
+  --sidebar-border: rgba(0, 0, 0, 0.06);
+  --sidebar-hover-bg: rgba(0, 0, 0, 0.05);
+  --sidebar-active-bg: rgba(0, 122, 255, 0.12);
+  --sidebar-active-text: #007AFF;
+
+  --app-bg: #f5f5f7;
+
+  --card-bg: rgba(255, 255, 255, 0.7);
+  --card-border: rgba(0, 0, 0, 0.05);
+  --card-shine: none;
+  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+
+  --glass-border-sm: rgba(0, 0, 0, 0.06);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-border-md: rgba(0, 0, 0, 0.10);
+  --glass-border-lg: rgba(0, 0, 0, 0.12);
+  --glass-bg-xs: rgba(0, 0, 0, 0.02);
+  --glass-bg-sm: rgba(0, 0, 0, 0.03);
+  --glass-bg: rgba(0, 0, 0, 0.04);
+  --glass-bg-md: rgba(0, 0, 0, 0.05);
+  --glass-bg-lg: rgba(0, 0, 0, 0.07);
+
+  --btn-sec-border: rgba(0, 0, 0, 0.10);
+  --btn-sec-bg: rgba(0, 0, 0, 0.04);
+  --btn-sec-hover-bg: rgba(0, 0, 0, 0.07);
+  --btn-sec-hover-border: rgba(0, 0, 0, 0.15);
+  --btn-ghost-color: rgb(71 85 105);
+
+  --input-bg: rgb(248 250 252);
+  --input-border: rgba(0, 0, 0, 0.10);
+  --input-placeholder: rgb(148 163 184);
+
+  --scrollbar-thumb: rgba(0, 0, 0, 0.15);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
+
+  --page-header-bg: rgba(0, 122, 255, 0.04);
+  --page-header-border: rgba(0, 0, 0, 0.08);
+
+  --bg-1: #f5f5f5;
+  --bg-2: #ffffff;
+  --bg-3: #f8fafc;
+  --ink-strong: rgb(15 23 42);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE RESET
+   ═══════════════════════════════════════════════════════════════════════════ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--app-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYOUT HELPERS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Sidebar shell — inline styles replaced by this class */
+.app-sidebar {
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPONENT CLASSES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Loading skeleton */
+.skeleton {
+  background: linear-gradient(90deg,
+      var(--glass-bg-sm) 0%,
+      var(--glass-bg-md) 50%,
+      var(--glass-bg-sm) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+  border-radius: 6px;
+}
+
+/* Page enter animation */
+.page-enter {
+  animation: fade-up 0.5s var(--apple-spring) both;
+}
+
+/* Base Glassmorphism utilities */
+.apple-glass {
+  background: var(--card-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--apple-md);
+}
+
+.apple-glass-dark {
+  background: rgba(28, 28, 30, 0.6);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIGHT-MODE OVERRIDES FOR HARD-CODED DARK UTILITY CLASSES
+   When Tailwind compiles bg-white/[0.06] it becomes rgba(255,255,255,0.06).
+   In light mode those are effectively invisible. We override them here.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* border-white overrides */
+.light .border-white\/\[0\.05\] {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+.light .border-white\/\[0\.06\] {
+  border-color: rgba(0, 0, 0, 0.07) !important;
+}
+
+.light .border-white\/\[0\.07\] {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.light .border-white\/\[0\.08\] {
+  border-color: rgba(0, 0, 0, 0.09) !important;
+}
+
+.light .border-white\/\[0\.12\] {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+.light .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.10) !important;
+}
+
+.light .border-white\/20 {
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* bg-white glass overrides */
+.light .bg-white\/\[0\.03\] {
+  background-color: rgba(0, 0, 0, 0.02) !important;
+}
+
+.light .bg-white\/\[0\.04\] {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+.light .bg-white\/\[0\.05\] {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+.light .bg-white\/\[0\.06\] {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+.light .bg-white\/\[0\.07\] {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.light .bg-white\/\[0\.08\] {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+.light .bg-white\/\[0\.1\] {
+  background-color: rgba(0, 0, 0, 0.07) !important;
+}
+
+/* Ensure dark-bg surfaces read cleanly in light mode */
+.light .bg-\[\#080a10\],
+.light .bg-\[\#06080d\],
+.light .bg-\[\#0e1118\],
+.light .bg-\[\#0f1216\],
+.light .bg-\[\#161a20\] {
+  background-color: var(--color-surface-2) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TIPTAP / PROSEMIRROR EDITOR
+   ═══════════════════════════════════════════════════════════════════════════ */
+.ProseMirror {
+  min-height: 380px;
+  border: 1px solid var(--input-border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: var(--input-bg);
+  color: var(--color-ink);
+  outline: none;
+}
+
+.ProseMirror:focus {
+  border-color: rgba(0, 122, 255, 0.4);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.08);
+}
+
+.draft-body-editor .ProseMirror {
+  padding: 1.25rem 1.25rem 1.5rem;
+  min-height: 480px;
+}
+
+.draft-body-editor .ProseMirror h1:first-of-type {
+  display: block;
+  margin: 0 0 1.1rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--card-border);
+  font-size: 2rem;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.draft-body-editor .ProseMirror section {
+  margin: 1.25rem 0 1.5rem;
+}
+
+.draft-body-editor .ProseMirror section h3 {
+  margin: 0 0 0.65rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.draft-body-editor .ProseMirror section p {
+  margin: 0 0 0.75rem;
+  line-height: 1.7;
+  color: var(--color-ink-soft);
+}
+
+.draft-body-editor .ProseMirror ul {
+  margin: 0.4rem 0 0.9rem 1.2rem;
+  list-style: disc;
+  color: var(--color-ink-soft);
+}
+
+.draft-body-editor .ProseMirror a {
+  color: #007AFF;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 500;
+}
+
+.draft-body-editor .ProseMirror footer {
+  margin-top: 1.75rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--card-border);
+  color: var(--color-ink-soft);
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
