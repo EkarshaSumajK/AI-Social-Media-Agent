@@ -39,30 +39,27 @@ npm run dev
 
 ## 🌐 Deployment
 
-**Choose your guide:**
+**One repository, one deployment!**
 
-- 🚀 [**QUICK_DEPLOY.md**](./QUICK_DEPLOY.md) - Step-by-step checklist (30 min)
-- 📖 [**DEPLOYMENT_GUIDE.md**](./DEPLOYMENT_GUIDE.md) - Complete detailed guide
-- 📋 [**DEPLOYMENT_SUMMARY.md**](./DEPLOYMENT_SUMMARY.md) - Overview & architecture
+Deploy everything to Railway in 20 minutes:
+- 🚀 [**QUICK_DEPLOY.md**](./script/QUICK_DEPLOY.md) - Step-by-step checklist
+- 📖 [**RAILWAY_GUIDE.md**](./script/RAILWAY_GUIDE.md) - Railway-specific features
+- 📋 [**DEPLOYMENT_SUMMARY.md**](./script/DEPLOYMENT_SUMMARY.md) - Overview & architecture
 
-### Free Hosting Setup
-- Backend → Render.com (free)
-- Frontend → Vercel (free)
+### Railway Setup (All-in-One)
+- Backend + Frontend + Workers → Railway.app
 - Database → Neon (already configured)
-- Redis → Upstash (free)
+- Redis → Railway (included!)
 
-**Total Cost: $0/month** 🎉
+**Total Cost: $0/month** (covered by Railway's $5 free credit) 🎉
 
 ## 📚 Documentation
 
-- [**QUICK_DEPLOY.md**](./QUICK_DEPLOY.md) - 30-minute deployment checklist ⚡
-- [**DEPLOYMENT_GUIDE.md**](./DEPLOYMENT_GUIDE.md) - Complete detailed guide 📖
-- [**DEPLOYMENT_SUMMARY.md**](./DEPLOYMENT_SUMMARY.md) - Overview & architecture 📋
-- [**RENDER_SETUP.md**](./RENDER_SETUP.md) - Render.com service types explained 🔧
-- [**RENDER_VS_UPSTASH.md**](./RENDER_VS_UPSTASH.md) - Why Upstash for Redis 💡
+- [**QUICK_DEPLOY.md**](./script/QUICK_DEPLOY.md) - 20-minute deployment checklist ⚡
+- [**RAILWAY_GUIDE.md**](./script/RAILWAY_GUIDE.md) - Railway platform guide 🚂
+- [**DEPLOYMENT_SUMMARY.md**](./script/DEPLOYMENT_SUMMARY.md) - Overview & architecture 📋
 - [Backend README](./wng-backend/README.md) - Backend architecture
 - [Frontend README](./wng-frontend/README.md) - Frontend features
-- [Separation Summary](./SEPARATION_SUMMARY.md) - Repository separation details
 - [Enum Migration](./wng-backend/ENUM_MIGRATION.md) - Database compatibility
 
 ## ✨ Features
