@@ -9,6 +9,10 @@ RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r re
 
 # Copy application code
 COPY app ./app
+COPY alembic ./alembic
+COPY alembic.ini ./
+COPY prompts ./prompts
+COPY trusted_sources.yaml ./
 COPY main.py ./
 COPY start.sh ./
 
