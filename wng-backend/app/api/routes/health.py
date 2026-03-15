@@ -18,22 +18,16 @@ async def health() -> dict:
         # Check Redis connection with SSL support for Upstash
         redis_url = settings.redis_url
         
-        # Configure SSL for Upstash
-        if 'upstash.io' in redis_url:
-            if redis_url.startswith('redis://'):
-                redis_url = redis_url.replace('redis://', 'rediss://')
-            
-            ssl_context = ssl.create_default_context()
-            ssl_context.check_hostname = False
-            ssl_context.verify_mode = ssl.CERT_NONE
-            
-            r = aioredis.from_url(
-                redis_url,
-                socket_connect_timeout=3,
-                ssl=ssl_context
-            )
-        else:
-            r = aioredis.from_url(redis_url, socket_connect_timeout=3)
+        # Configure SSL for Upstash - use rediss:// protocol
+        if 'upstash.io' in redis_url and redis_url.startswith('redis://'):
+            redis_url = redis_url.replace('redis://', 'rediss://')
+        
+        # For rediss://, the library handles SSL automatically
+        r = aioredis.from_url(
+            redis_url,
+            socket_connect_timeout=3,
+            decode_responses=False
+        )
         
         await r.ping()
         await r.aclose()
@@ -48,22 +42,15 @@ async def health() -> dict:
         except Exception as celery_err:
             print(f"Celery inspect error: {celery_err}")
             # Fallback: check for Celery-related keys in Redis
-            if 'upstash.io' in settings.redis_url:
-                redis_url_check = settings.redis_url
-                if redis_url_check.startswith('redis://'):
-                    redis_url_check = redis_url_check.replace('redis://', 'rediss://')
-                
-                ssl_context = ssl.create_default_context()
-                ssl_context.check_hostname = False
-                ssl_context.verify_mode = ssl.CERT_NONE
-                
-                r2 = aioredis.from_url(
-                    redis_url_check,
-                    socket_connect_timeout=3,
-                    ssl=ssl_context
-                )
-            else:
-                r2 = aioredis.from_url(settings.redis_url, socket_connect_timeout=3)
+            redis_url_check = settings.redis_url
+            if 'upstash.io' in redis_url_check and redis_url_check.startswith('redis://'):
+                redis_url_check = redis_url_check.replace('redis://', 'rediss://')
+            
+            r2 = aioredis.from_url(
+                redis_url_check,
+                socket_connect_timeout=3,
+                decode_responses=False
+            )
             
             keys = await r2.keys('_kombu.binding.*')
             await r2.aclose()
