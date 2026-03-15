@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models.topic import Topic
+from app.models.enums import TopicStatus
 from app.services.content_screening_service import ContentScreeningService
 from app.services.duplicate_service import DuplicateChecker
 from app.services.llm_service import LLMClient
@@ -987,8 +988,8 @@ class TrendCollector:
             existing_topic.x_trend_phrase = x_trend_phrase
             existing_topic.x_top_tweet_raw = x_top_tweet_raw
             existing_topic.created_at = datetime.now(timezone.utc)
-            if existing_topic.status != 'processed':
-                existing_topic.status = 'new'
+            if existing_topic.status != TopicStatus.PROCESSED:
+                existing_topic.status = TopicStatus.NEW
             if existing_topics_by_url is not None:
                 existing_topics_by_url[source_url] = existing_topic
             return 'replaced_existing'
@@ -1048,7 +1049,7 @@ class TrendCollector:
             matched_topic = matched_result.scalar_one_or_none()
             if (
                 matched_topic is not None
-                and matched_topic.status == 'new'
+                and matched_topic.status == TopicStatus.NEW
                 and decision.trust_score > int(matched_topic.trust_score or 0)
                 and matched_topic.source_url != source_url
             ):
@@ -1087,7 +1088,7 @@ class TrendCollector:
             original_published_at=_parse_published_at(item.get('published_at')),
             related_keywords=item.get('keywords'),
             embedding=embedding,
-            status='new',
+            status=TopicStatus.NEW,
             relevance_label=decision.relevance,
             relevance_score=decision.relevance_score,
             age_group=decision.age_group,

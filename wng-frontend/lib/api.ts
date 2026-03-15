@@ -530,3 +530,26 @@ export async function extractImageText(data: {
 }): Promise<{ image_text: string }> {
   return request('/image-text/extract', { method: 'POST', body: JSON.stringify(data) });
 }
+
+// ---------------------------------------------------------------------------
+// AI Image Generation
+// ---------------------------------------------------------------------------
+
+export async function generateAIImage(articleId: number, platform: string): Promise<{ image_url: string; platform: string; article_id: number }> {
+  return request('/ai-images/generate', {
+    method: 'POST',
+    body: JSON.stringify({ article_id: articleId, platform }),
+  });
+}
+
+export async function generateAIImageFromText(data: {
+  caption: string;
+  platform: string;
+  title?: string;
+  context?: string;
+}): Promise<{ image_url: string; platform: string }> {
+  return request('/ai-images/generate-from-text', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}

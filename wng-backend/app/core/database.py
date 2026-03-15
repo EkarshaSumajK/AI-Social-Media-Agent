@@ -79,7 +79,7 @@ async def create_tables() -> None:
     # Import all models to ensure they're registered with Base.metadata
     from app.models import (
         article, audit_log, campaign, competitor, competitor_analysis,
-        daily_post, hook_template, platform_content, regional_content,
+        daily_post, hook_template, platform_content, post, regional_content,
         scheduled_post, social_account, social_post, swipe_file,
         thought_leadership, topic, user, youtube_short
     )

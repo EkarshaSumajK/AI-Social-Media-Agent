@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Check, Copy, ImageIcon, Loader2, Send, X } from 'lucide-react';
 
+import { AIImageButton } from '@/components/ai-image-button';
 import { ImageGeneratorModal } from '@/components/image-generator/ImageGeneratorModal';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
@@ -148,8 +149,13 @@ export default function PlatformContentHistoryDetailPage() {
                   onClick={() => setImageModalOpen(true)}
                 >
                   <ImageIcon size={13} />
-                  Generate Image
+                  Template
                 </Button>
+                <AIImageButton
+                  caption={item.content}
+                  platform={PLATFORM_MAP[item.platform?.toLowerCase()] ?? 'linkedin'}
+                  title={item.topic || ''}
+                />
                 <CopyButton text={item.content} />
                 {!isYouTube && (
                   publishOutcome === 'posted' ? (

@@ -2,30 +2,30 @@ from enum import Enum
 
 
 class TopicStatus(str, Enum):
-    NEW = 'new'
-    PROCESSED = 'processed'
-    DUPLICATE_REJECTED = 'duplicate_rejected'
+    NEW = 'NEW'
+    PROCESSED = 'PROCESSED'
+    DUPLICATE_REJECTED = 'DUPLICATE_REJECTED'
 
 
 class ArticleStatus(str, Enum):
-    DRAFT = 'draft'
-    APPROVED = 'approved'
-    REJECTED = 'rejected'
-    PUBLISHED = 'published'
+    DRAFT = 'DRAFT'
+    APPROVED = 'APPROVED'
+    REJECTED = 'REJECTED'
+    PUBLISHED = 'PUBLISHED'
 
 
 class SocialPlatform(str, Enum):
-    INSTAGRAM = 'instagram'
-    LINKEDIN = 'linkedin'
-    TWITTER = 'twitter'
-    FACEBOOK = 'facebook'
+    INSTAGRAM = 'INSTAGRAM'
+    LINKEDIN = 'LINKEDIN'
+    TWITTER = 'TWITTER'
+    FACEBOOK = 'FACEBOOK'
 
 
 class SocialStatus(str, Enum):
-    DRAFT = 'draft'
-    READY = 'ready'
-    POSTED = 'posted'
-    FAILED = 'failed'
+    DRAFT = 'DRAFT'
+    READY = 'READY'
+    POSTED = 'POSTED'
+    FAILED = 'FAILED'
 
 
 class UserRole(str, Enum):
@@ -60,9 +60,9 @@ class TopicCategory(str, Enum):
 
 
 class Region(str, Enum):
-    INDIA = 'india'
-    USA = 'usa'
-    GLOBAL = 'global'
+    INDIA = 'INDIA'
+    USA = 'USA'
+    GLOBAL = 'GLOBAL'
 
 
 class CampaignStatus(str, Enum):

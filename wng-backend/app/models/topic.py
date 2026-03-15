@@ -1,9 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, JSON, String, Text, func
+from sqlalchemy import Boolean, DateTime, Enum, Float, Integer, JSON, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+from app.models.enums import Platform, TopicStatus
 
 
 class Topic(Base):
@@ -34,10 +35,10 @@ class Topic(Base):
     embedding: Mapped[list[float] | None] = mapped_column(JSON, nullable=True)
     related_keywords: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     original_published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    platform: Mapped[str] = mapped_column(String(50), default='horizon', index=True)
+    platform: Mapped[Platform] = mapped_column(Enum(Platform, values_callable=lambda obj: [e.value for e in obj]), default=Platform.HORIZON, index=True)
     topic_category: Mapped[str | None] = mapped_column(String(30), nullable=True, index=True)
     region: Mapped[str] = mapped_column(String(10), default='global', index=True)
-    status: Mapped[str] = mapped_column(String(50), default='new', index=True)
+    status: Mapped[TopicStatus] = mapped_column(Enum(TopicStatus), default=TopicStatus.NEW, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     articles = relationship('Article', back_populates='topic', cascade='all, delete-orphan')

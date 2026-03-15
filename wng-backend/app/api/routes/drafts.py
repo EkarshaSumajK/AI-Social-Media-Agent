@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_reviewer
 from app.core.database import get_db
+from app.models.enums import ArticleStatus
 from app.models.user import User
 from app.schemas.article import ArticleOut, DraftUpdateRequest, MessageResponse, SocialPublishResponse
 from app.services.article_service import ArticleService
@@ -26,7 +27,10 @@ async def list_drafts(
 ) -> list[ArticleOut]:
     status_enum = None
     if status:
-        status_enum = status
+        try:
+            status_enum = ArticleStatus(status)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail='Invalid article status') from exc
 
     records = await service.list_articles(db, status=status_enum)
     paginated = records[offset:offset + limit]
@@ -199,7 +203,7 @@ async def delete_draft(
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
-    if article.status == 'published':
+    if article.status == ArticleStatus.PUBLISHED:
         raise HTTPException(status_code=400, detail='Published articles cannot be deleted.')
 
     await db.delete(article)

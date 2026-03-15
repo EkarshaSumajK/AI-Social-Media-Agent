@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models.article import Article
+from app.models.enums import ArticleStatus, SocialPlatform, SocialStatus
 from app.models.social_post import SocialPost
 
 settings = get_settings()
@@ -14,46 +15,46 @@ settings = get_settings()
 
 class SocialPublisher:
     async def publish_pending_posts(self, db: AsyncSession, article: Article) -> dict[str, str]:
-        if article.status != 'published':
+        if article.status.value != 'published':
             raise RuntimeError('Social publishing is allowed only after article is published.')
 
         outcomes: dict[str, str] = {}
         for post in article.social_posts:
-            if post.status == 'posted':
-                outcomes[post.platform] = 'already_posted'
+            if post.status == SocialStatus.POSTED:
+                outcomes[post.platform.value] = 'already_posted'
                 continue
-            if post.status != 'ready':
-                outcomes[post.platform] = 'skipped_not_ready'
+            if post.status != SocialStatus.READY:
+                outcomes[post.platform.value] = 'skipped_not_ready'
                 continue
 
             caption = (post.edited_caption or post.caption).strip()
             try:
                 external_id = await self._dispatch(platform=post.platform, caption=caption, link=article.published_url)
-                post.status = 'posted'
+                post.status = SocialStatus.POSTED
                 post.external_post_id = external_id
                 post.error_message = None
                 post.posted_at = datetime.now(timezone.utc)
-                outcomes[post.platform] = 'posted'
+                outcomes[post.platform.value] = 'posted'
             except Exception as exc:  # noqa: BLE001
-                post.status = 'failed'
+                post.status = SocialStatus.FAILED
                 post.error_message = str(exc)
-                outcomes[post.platform] = 'failed'
+                outcomes[post.platform.value] = 'failed'
 
             db.add(post)
 
         await db.flush()
         return outcomes
 
-    async def _dispatch(self, *, platform: str, caption: str, link: str | None, image_url: str | None = None) -> str:
-        if platform == 'facebook':
+    async def _dispatch(self, *, platform: SocialPlatform, caption: str, link: str | None, image_url: str | None = None) -> str:
+        if platform == SocialPlatform.FACEBOOK:
             return await self._post_facebook(caption, link, image_url)
-        if platform == 'instagram':
+        if platform == SocialPlatform.INSTAGRAM:
             return await self._post_instagram(caption, image_url)
-        if platform == 'linkedin':
+        if platform == SocialPlatform.LINKEDIN:
             return await self._post_linkedin(caption, link)
-        if platform == 'twitter':
+        if platform == SocialPlatform.TWITTER:
             return await self._post_x(caption, link)
-        raise RuntimeError(f'Unsupported platform: {platform}')
+        raise RuntimeError(f'Unsupported platform: {platform.value}')
 
     async def _post_facebook(self, caption: str, link: str | None, image_url: str | None = None) -> str:
         if not settings.meta_access_token or not settings.facebook_page_id:
@@ -158,23 +159,23 @@ class SocialPublisher:
 
 def mark_posts_ready(article: Article) -> None:
     for post in article.social_posts:
-        if post.status == 'draft':
-            post.status = 'ready'
+        if post.status == SocialStatus.DRAFT:
+            post.status = SocialStatus.READY
 
 
 def upsert_social_posts(article: Article, posts_by_platform: dict[str, str]) -> None:
-    by_platform = {post.platform: post for post in article.social_posts}
+    by_platform = {post.platform.value: post for post in article.social_posts}
     for platform_name, caption in posts_by_platform.items():
         existing = by_platform.get(platform_name)
         if existing:
             existing.caption = caption
-            existing.status = 'draft'
+            existing.status = SocialStatus.DRAFT
             continue
 
         article.social_posts.append(
             SocialPost(
-                platform=platform_name,
+                platform=SocialPlatform(platform_name),
                 caption=caption,
-                status='draft',
+                status=SocialStatus.DRAFT,
             )
         )

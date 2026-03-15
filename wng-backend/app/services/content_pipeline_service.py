@@ -16,6 +16,7 @@ from app.core.config import get_settings
 from app.models.article import Article
 from app.models.social_post import SocialPost
 from app.models.topic import Topic
+from app.models.enums import TopicStatus, ArticleStatus
 from app.services.audit_service import log_action
 from app.services.compliance_service import (
     build_author_info,
@@ -139,7 +140,7 @@ class ContentPipelineService:
                     is_trending=False,
                     trend_regions=['International'],
                     trend_sentiment='awareness',
-                    status='new',
+                    status=TopicStatus.NEW,
                 )
                 db.add(topic)
                 await db.flush()
@@ -167,7 +168,7 @@ class ContentPipelineService:
             if topic is None:
                 raise ValueError('Topic not found')
 
-            if topic.status == 'duplicate_rejected':
+            if topic.status == TopicStatus.DUPLICATE_REJECTED:
                 raise DuplicateTopicError('Topic is already marked as duplicate')
 
             existing_article_result = await db.execute(
@@ -187,7 +188,7 @@ class ContentPipelineService:
             topic.embedding = embedding
 
             if is_duplicate and matched_topic_id and matched_topic_id != topic.id:
-                topic.status = 'duplicate_rejected'
+                topic.status = TopicStatus.DUPLICATE_REJECTED
                 await log_action(
                     db,
                     action='topic_duplicate_rejected',
@@ -349,7 +350,7 @@ class ContentPipelineService:
                     how_services_help=generated.how_services_help,
                     call_to_action=generated.call_to_action,
                     source_url=topic.source_url,
-                    status='draft',
+                    status=ArticleStatus.DRAFT,
                     requires_review=quality_requires_review,
                     internal_links_added=True,
                     readability_score=quality_readability,
@@ -379,7 +380,7 @@ class ContentPipelineService:
                 article.source_similarity_score = quality_similarity
                 article.structure_valid = quality_structure
                 article.quality_notes = quality_notes
-                article.status = 'draft'
+                article.status = ArticleStatus.DRAFT
                 article.approved_at = None
                 article.approved_by = None
                 article.published_at = None
@@ -390,7 +391,7 @@ class ContentPipelineService:
                 article.social_posts = list(posts_result.scalars().all())
 
             upsert_social_posts(article, generated.social_posts)
-            topic.status = 'processed'
+            topic.status = TopicStatus.PROCESSED
             await _report_progress(progress_callback, stage='saving', progress=94, message='Saving draft and audit records.')
 
             await log_action(

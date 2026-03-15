@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_reviewer
 from app.core.celery_app import celery_app
 from app.core.database import get_db
+from app.models.enums import TopicStatus
 from app.models.topic import Topic
 from app.models.user import User
 from app.schemas.topic import (
@@ -277,7 +278,7 @@ async def delete_topic(
     if topic is None:
         raise HTTPException(status_code=404, detail='Topic not found')
 
-    if topic.status == 'processed':
+    if topic.status == TopicStatus.PROCESSED:
         raise HTTPException(status_code=400, detail='Cannot delete a topic that has been processed into a draft.')
 
     await db.delete(topic)

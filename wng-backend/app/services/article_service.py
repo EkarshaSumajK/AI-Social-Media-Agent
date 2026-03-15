@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.article import Article
+from app.models.enums import ArticleStatus, Platform
 from app.services.audit_service import log_action
 from app.services.cms_service import NativePublishService
 from app.services.lock_service import redis_lock
@@ -18,7 +19,7 @@ class ArticleService:
         self.publish_service = NativePublishService()
         self.social_publisher = SocialPublisher()
 
-    async def list_articles(self, db: AsyncSession, *, status: str | None = None, platform: str | None = None, created_by: int | None = None) -> list[Article]:
+    async def list_articles(self, db: AsyncSession, *, status: ArticleStatus | None = None, platform: str | None = None, created_by: int | None = None) -> list[Article]:
         stmt = select(Article).options(selectinload(Article.social_posts), selectinload(Article.topic)).order_by(Article.created_at.desc())
         if status:
             stmt = stmt.where(Article.status == status)
@@ -60,7 +61,7 @@ class ArticleService:
     ) -> Article:
         article = await self.get_article(db, article_id)
 
-        if article.status == 'published':
+        if article.status == ArticleStatus.PUBLISHED:
             raise RuntimeError('Published articles cannot be edited from draft workflow.')
 
         article.content_html = content_html
@@ -82,7 +83,7 @@ class ArticleService:
             entity_type='article',
             entity_id=str(article.id),
             actor_id=actor_id,
-            details={'status': article.status},
+            details={'status': article.status.value},
         )
         await db.commit()
         await db.refresh(article)
@@ -91,10 +92,10 @@ class ArticleService:
     async def approve_draft(self, db: AsyncSession, *, article_id: int, actor_id: int) -> Article:
         article = await self.get_article(db, article_id)
 
-        if article.status not in {'draft', 'rejected'}:
+        if article.status not in {ArticleStatus.DRAFT, ArticleStatus.REJECTED}:
             raise RuntimeError('Only draft or rejected articles can be approved.')
 
-        article.status = 'approved'
+        article.status = ArticleStatus.APPROVED
         article.approved_by = actor_id
         article.approved_at = datetime.now(timezone.utc)
 
@@ -112,10 +113,10 @@ class ArticleService:
     async def reject_draft(self, db: AsyncSession, *, article_id: int, actor_id: int) -> Article:
         article = await self.get_article(db, article_id)
 
-        if article.status == 'published':
+        if article.status == ArticleStatus.PUBLISHED:
             raise RuntimeError('Published articles cannot be rejected.')
 
-        article.status = 'rejected'
+        article.status = ArticleStatus.REJECTED
         article.approved_by = None
         article.approved_at = None
 
@@ -134,14 +135,14 @@ class ArticleService:
         async with redis_lock(f'article:{article_id}:publish', ttl_seconds=180):
             article = await self.get_article(db, article_id)
 
-            if article.status != 'approved':
+            if article.status != ArticleStatus.APPROVED:
                 raise RuntimeError('Article must be approved before publishing.')
             if not article.approved_by or not article.approved_at:
                 raise RuntimeError('Approval metadata missing; publishing blocked by policy.')
 
             published_url, _ = await self.publish_service.publish_article(article)
 
-            article.status = 'published'
+            article.status = ArticleStatus.PUBLISHED
             article.published_url = published_url
             article.published_at = datetime.now(timezone.utc)
             mark_posts_ready(article)

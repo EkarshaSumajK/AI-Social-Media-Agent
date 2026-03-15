@@ -29,23 +29,12 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title=settings.project_name, lifespan=lifespan)
 
-# Configure CORS - allow frontend and localhost
-allowed_origins = [
-    settings.frontend_url,
-    'http://localhost:3000',
-    'https://ai-social-media-agent-one.vercel.app',  # Your Vercel domain
-]
-
-# Remove None values and add wildcard for development
-allowed_origins = [origin for origin in allowed_origins if origin]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=[settings.frontend_url, 'http://localhost:3000'],
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
-    expose_headers=['*'],
 )
 
 app.include_router(api_router, prefix=settings.api_v1_prefix)

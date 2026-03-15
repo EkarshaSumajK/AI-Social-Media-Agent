@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.routes import (
+    ai_images,
     audience_content,
     audit,
     auth,
@@ -52,3 +53,4 @@ api_router.include_router(youtube_shorts.router, prefix='/youtube-shorts', tags=
 api_router.include_router(scheduling.router, prefix='/scheduling', tags=['scheduling'])
 api_router.include_router(social_accounts.router, prefix='/social-accounts', tags=['social-accounts'])
 api_router.include_router(regional.router, prefix='/regional', tags=['regional'])
+api_router.include_router(ai_images.router, prefix='/ai-images', tags=['ai-images'])

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.models.article import Article
+from app.models.enums import ArticleStatus
 from app.schemas.article import PublishedArticleOut
 
 router = APIRouter()
@@ -16,7 +17,7 @@ async def list_published_articles(
 ) -> list[PublishedArticleOut]:
     stmt = (
         select(Article)
-        .where(Article.status == 'published')
+        .where(Article.status == ArticleStatus.PUBLISHED)
         .order_by(Article.published_at.desc())
     )
     if platform:
@@ -33,7 +34,7 @@ async def get_published_article(
     result = await db.execute(
         select(Article).where(
             Article.slug == slug,
-            Article.status == 'published',
+            Article.status == ArticleStatus.PUBLISHED,
         )
     )
     article = result.scalar_one_or_none()
