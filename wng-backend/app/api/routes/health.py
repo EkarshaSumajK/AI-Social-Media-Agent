@@ -12,6 +12,7 @@ settings = get_settings()
 async def health() -> dict:
     redis_ok = False
     celery_ok = False
+    error_msg = None
 
     try:
         # Check Redis connection with SSL support for Upstash
@@ -44,7 +45,8 @@ async def health() -> dict:
             inspect = celery_app.control.inspect(timeout=2.0)
             active_workers = inspect.active()
             celery_ok = active_workers is not None and len(active_workers) > 0
-        except Exception:
+        except Exception as celery_err:
+            print(f"Celery inspect error: {celery_err}")
             # Fallback: check for Celery-related keys in Redis
             if 'upstash.io' in settings.redis_url:
                 redis_url_check = settings.redis_url
@@ -66,13 +68,21 @@ async def health() -> dict:
             keys = await r2.keys('_kombu.binding.*')
             await r2.aclose()
             celery_ok = len(keys) > 0
+            print(f"Celery fallback check: {celery_ok}, keys found: {len(keys)}")
     except Exception as e:
         # Log error for debugging but don't fail health check
+        error_msg = str(e)
         print(f"Health check error: {e}")
 
-    return {
+    result = {
         'status': 'healthy',
         'backend': True,
         'redis': redis_ok,
         'celery': celery_ok,
     }
+    
+    if error_msg:
+        result['error'] = error_msg
+    
+    print(f"Health check result: {result}")
+    return result
