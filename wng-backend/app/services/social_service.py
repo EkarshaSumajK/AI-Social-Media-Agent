@@ -174,7 +174,7 @@ def upsert_social_posts(article: Article, posts_by_platform: dict[str, str]) -> 
 
         article.social_posts.append(
             SocialPost(
-                platform=SocialPlatform(platform_name),
+                platform=SocialPlatform(platform_name.upper()),
                 caption=caption,
                 status=SocialStatus.DRAFT,
             )

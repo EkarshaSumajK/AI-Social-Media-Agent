@@ -338,13 +338,43 @@ a {
   border-radius: 0.75rem;
   padding: 1rem;
   background: var(--input-bg);
-  color: var(--color-ink);
+  color: rgb(226 232 240);
   outline: none;
 }
 
 .ProseMirror:focus {
   border-color: rgba(0, 122, 255, 0.4);
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.08);
+}
+
+.ProseMirror p {
+  color: rgb(203 213 225);
+  margin: 0.75rem 0;
+}
+
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror h4,
+.ProseMirror h5,
+.ProseMirror h6 {
+  color: rgb(241 245 249);
+  font-weight: 600;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  color: rgb(203 213 225);
+}
+
+.ProseMirror a {
+  color: #60a5fa;
+  text-decoration: underline;
+}
+
+.ProseMirror strong {
+  color: rgb(226 232 240);
+  font-weight: 600;
 }
 
 .draft-body-editor .ProseMirror {
@@ -361,6 +391,7 @@ a {
   line-height: 1.2;
   font-weight: 800;
   letter-spacing: -0.02em;
+  color: rgb(241 245 249);
 }
 
 .draft-body-editor .ProseMirror section {
@@ -371,22 +402,23 @@ a {
   margin: 0 0 0.65rem;
   font-size: 1.1rem;
   font-weight: 700;
+  color: rgb(226 232 240);
 }
 
 .draft-body-editor .ProseMirror section p {
   margin: 0 0 0.75rem;
   line-height: 1.7;
-  color: var(--color-ink-soft);
+  color: rgb(203 213 225);
 }
 
 .draft-body-editor .ProseMirror ul {
   margin: 0.4rem 0 0.9rem 1.2rem;
   list-style: disc;
-  color: var(--color-ink-soft);
+  color: rgb(203 213 225);
 }
 
 .draft-body-editor .ProseMirror a {
-  color: #007AFF;
+  color: #60a5fa;
   text-decoration: underline;
   text-underline-offset: 2px;
   font-weight: 500;
@@ -396,7 +428,7 @@ a {
   margin-top: 1.75rem;
   padding-top: 1rem;
   border-top: 1px dashed var(--card-border);
-  color: var(--color-ink-soft);
+  color: rgb(148 163 184);
 }
 
 @layer base {

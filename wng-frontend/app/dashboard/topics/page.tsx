@@ -33,6 +33,7 @@ export default function TopicsPage() {
   const [timeRange, setTimeRange] = useState<'today' | '48h' | 'week' | 'all'>('today');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [regionFilter, setRegionFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [pipelineRunning, setPipelineRunning] = useState(false);
   const [busyTopicId, setBusyTopicId] = useState<number | null>(null);
@@ -63,12 +64,15 @@ export default function TopicsPage() {
     if (regionFilter !== 'all') {
       result = result.filter((t) => t.region === regionFilter);
     }
+    if (statusFilter !== 'all') {
+      result = result.filter((t) => t.status === statusFilter);
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter((t) => t.title.toLowerCase().includes(q) || t.summary?.toLowerCase().includes(q));
     }
     return result;
-  }, [topics, categoryFilter, regionFilter, searchQuery]);
+  }, [topics, categoryFilter, regionFilter, statusFilter, searchQuery]);
 
   async function handleCollect() {
     setPipelineRunning(true);
@@ -200,6 +204,18 @@ export default function TopicsPage() {
             ]}
           />
 
+          <AppSelect
+            value={statusFilter}
+            onValueChange={setStatusFilter}
+            triggerClassName="w-full sm:w-32"
+            options={[
+              { value: 'all', label: 'All Status' },
+              { value: 'new', label: 'New' },
+              { value: 'processed', label: 'Processed' },
+              { value: 'duplicate_rejected', label: 'Duplicate' },
+            ]}
+          />
+
           <span className="text-xs text-ink-soft">{filtered.length} topics</span>
         </div>
 
@@ -244,7 +260,7 @@ export default function TopicsPage() {
                   <a className="font-medium text-apple-blue/80 hover:text-apple-blue hover:underline" href={topic.source_url} rel="noreferrer" target="_blank">
                     <ExternalLink size={12} className="mr-0.5 inline" /> Source
                   </a>
-                  {topic.status === 'new' && (
+                  {topic.status?.toLowerCase() === 'new' && (
                     <Button className="!py-1 !text-xs" onClick={() => handleGenerate(topic.id)} disabled={busyTopicId === topic.id}>
                       {busyTopicId === topic.id ? 'Queuing...' : 'Generate Draft'}
                     </Button>

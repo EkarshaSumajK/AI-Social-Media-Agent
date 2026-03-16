@@ -23,7 +23,7 @@ export function TipTapEditor({ value, onChange }: TipTapEditorProps) {
     content: value,
     editorProps: {
       attributes: {
-        class: 'prose prose-slate max-w-none',
+        class: 'prose prose-invert max-w-none focus:outline-none min-h-[400px] text-gray-200',
       },
     },
     onUpdate: ({ editor: instance }) => {
@@ -39,5 +39,9 @@ export function TipTapEditor({ value, onChange }: TipTapEditorProps) {
     }
   }, [editor, value]);
 
-  return <EditorContent editor={editor} />;
+  return (
+    <div className="rounded-lg border border-white/10 bg-[#1a1d24] p-4">
+      <EditorContent editor={editor} />
+    </div>
+  );
 }
