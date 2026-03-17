@@ -1,8 +1,7 @@
 from fastapi import APIRouter
-import redis.asyncio as aioredis
-import ssl
 
 from app.core.config import get_settings
+from app.core.redis import ping_redis, get_redis_client
 
 router = APIRouter()
 settings = get_settings()
@@ -15,23 +14,8 @@ async def health() -> dict:
     error_msg = None
 
     try:
-        # Check Redis connection with SSL support for Upstash
-        redis_url = settings.redis_url
-        
-        # Configure SSL for Upstash - use rediss:// protocol
-        if 'upstash.io' in redis_url and redis_url.startswith('redis://'):
-            redis_url = redis_url.replace('redis://', 'rediss://')
-        
-        # For rediss://, the library handles SSL automatically
-        r = aioredis.from_url(
-            redis_url,
-            socket_connect_timeout=3,
-            decode_responses=False
-        )
-        
-        await r.ping()
-        await r.aclose()
-        redis_ok = True
+        # Check Redis connection using shared utility
+        redis_ok = await ping_redis(timeout=3.0)
         
         # Check Celery workers using Celery's inspect API
         try:
@@ -42,20 +26,16 @@ async def health() -> dict:
         except Exception as celery_err:
             print(f"Celery inspect error: {celery_err}")
             # Fallback: check for Celery-related keys in Redis
-            redis_url_check = settings.redis_url
-            if 'upstash.io' in redis_url_check and redis_url_check.startswith('redis://'):
-                redis_url_check = redis_url_check.replace('redis://', 'rediss://')
-            
-            r2 = aioredis.from_url(
-                redis_url_check,
-                socket_connect_timeout=3,
-                decode_responses=False
-            )
-            
-            keys = await r2.keys('_kombu.binding.*')
-            await r2.aclose()
-            celery_ok = len(keys) > 0
-            print(f"Celery fallback check: {celery_ok}, keys found: {len(keys)}")
+            try:
+                redis = get_redis_client(decode_responses=False)
+                keys = await redis.keys('_kombu.binding.*')
+                await redis.aclose()
+                celery_ok = len(keys) > 0
+                print(f"Celery fallback check: {celery_ok}, keys found: {len(keys)}")
+            except Exception as redis_err:
+                print(f"Celery fallback Redis check failed: {redis_err}")
+                celery_ok = False
+                
     except Exception as e:
         # Log error for debugging but don't fail health check
         error_msg = str(e)

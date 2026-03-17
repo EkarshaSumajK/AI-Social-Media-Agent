@@ -39,6 +39,15 @@ celery_app.conf.update(
     task_acks_late=True,
     task_track_started=True,
     broker_connection_retry_on_startup=True,
+    broker_connection_retry=True,
+    broker_connection_max_retries=10,
+    broker_heartbeat=30,
+    result_backend_transport_options={
+        'retry_on_timeout': True,
+    },
+    broker_transport_options={
+        'retry_on_timeout': True,
+    },
 )
 
 # Apply SSL configuration if needed

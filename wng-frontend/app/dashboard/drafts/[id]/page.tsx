@@ -497,21 +497,21 @@ export default function DraftDetailPage() {
           {saving ? 'Working...' : 'Save Draft'}
         </Button>
 
-        <Button onClick={handleApprove} disabled={saving || draft.status === 'published'} type="button">
+        <Button onClick={handleApprove} disabled={saving || draft.status === 'PUBLISHED'} type="button">
           Approve
         </Button>
 
-        <Button variant="destructive" onClick={handleReject} disabled={saving || draft.status === 'published'} type="button">
+        <Button variant="destructive" onClick={handleReject} disabled={saving || draft.status === 'PUBLISHED'} type="button">
           Reject
         </Button>
 
-        {draft.status === 'approved' && (
+        {draft.status === 'APPROVED' && (
           <Button onClick={handlePublish} disabled={saving} type="button">
             Publish
           </Button>
         )}
 
-        {draft.status === 'published' && (
+        {draft.status === 'PUBLISHED' && (
           <>
             <a
               className="inline-flex h-10 items-center justify-center rounded-md border border-white/[0.10] bg-white/[0.06] px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-white/[0.10]"

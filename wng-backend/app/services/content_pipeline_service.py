@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import html
 import inspect
 import logging
@@ -162,256 +163,286 @@ class ContentPipelineService:
         progress_callback: ProgressCallback | None = None,
     ) -> Article:
         await _report_progress(progress_callback, stage='loading_topic', progress=15, message='Loading topic details.')
-        async with redis_lock(f'topic:{topic_id}:draft_generation', ttl_seconds=600):
-            topic_result = await db.execute(select(Topic).where(Topic.id == topic_id))
-            topic = topic_result.scalar_one_or_none()
-            if topic is None:
-                raise ValueError('Topic not found')
-
-            if topic.status == TopicStatus.DUPLICATE_REJECTED:
-                raise DuplicateTopicError('Topic is already marked as duplicate')
-
-            existing_article_result = await db.execute(
-                select(Article)
-                .options(selectinload(Article.social_posts))
-                .where(Article.topic_id == topic.id)
-            )
-            article = existing_article_result.scalar_one_or_none()
-
-            is_duplicate, score, matched_topic_id, embedding = await self.duplicate_checker.check_topic(
-                db,
-                title=topic.title,
-                summary=topic.summary,
-                threshold=settings.duplicate_generation_similarity_threshold,
-            )
-            await _report_progress(progress_callback, stage='duplicate_check', progress=25, message='Checking for near-duplicate topics.')
-            topic.embedding = embedding
-
-            if is_duplicate and matched_topic_id and matched_topic_id != topic.id:
-                topic.status = TopicStatus.DUPLICATE_REJECTED
-                await log_action(
-                    db,
-                    action='topic_duplicate_rejected',
-                    entity_type='topic',
-                    entity_id=str(topic.id),
-                    actor_id=actor_id,
-                    details={'matched_topic_id': matched_topic_id, 'similarity': round(score, 4)},
-                )
-                await db.commit()
-                raise DuplicateTopicError(
-                    'Near-duplicate topic detected; draft generation blocked.',
-                    matched_topic_id=matched_topic_id,
-                    score=score,
-                )
-
-            if not topic.statistics or not topic.trend_regions:
-                await _report_progress(progress_callback, stage='enrichment', progress=35, message='Enriching topic context and statistics.')
-                enriched = await self.enrichment.enrich(topic_title=topic.title, topic_summary=topic.summary)
-                topic.is_trending = enriched.is_trending
-                topic.trend_regions = enriched.regions
-                topic.public_concerns = enriched.public_concerns
-                topic.trend_statements = enriched.statements
-                topic.trend_sentiment = enriched.sentiment
-                topic.statistics = enriched.statistics
-
-            source_summary = str(topic.summary or '').strip()
-            await _report_progress(
-                progress_callback,
-                stage='fetching_source_article',
-                progress=45,
-                message='Fetching trusted source article content for higher-fidelity drafting.',
-            )
+        
+        # Add retry logic for Redis lock with better error handling
+        max_lock_retries = 3
+        for lock_attempt in range(max_lock_retries):
             try:
-                payload = await _fetch_article_payload(topic.source_url)
-                fetched_summary = str(payload.get('summary') or '').strip()
-                if fetched_summary:
-                    source_summary = fetched_summary
-                    topic.summary = fetched_summary
-            except RuntimeError:
-                # Continue with existing topic summary if source fetch fails.
-                pass
-
-            guidance = (
-                'Write with strong quality-by-prompt discipline. Keep SEO metadata strict and natural: focus keyword in '
-                'title, meta description, first paragraph, and at least one section heading. Keep readability at 6th-8th '
-                'grade with clear 12-20 word sentences and varied rhythm. Preserve the exact nine-section structure with '
-                'complete, useful content in each section. CRITICAL: Avoid plagiarism by fully paraphrasing source material — '
-                'never reproduce 7+ consecutive words from the source, change sentence structures, replace terminology with '
-                'synonyms, and reorganize the order of ideas. Reduce AI tone by using natural clinician language and varied '
-                'sentence openings. Use first-person voice naturally but not in every sentence. Avoid keyword stuffing, '
-                'duplicated lines, and template labels in section outputs.'
-            )
-
-            await _report_progress(
-                progress_callback,
-                stage='draft_generation',
-                progress=75,
-                message='Generating draft content with in-prompt quality constraints.',
-            )
-            focus_keyword = _derive_focus_keyword(topic.title, topic.related_keywords)
-
-            generated = await self.graph.run(
-                topic_title=topic.title,
-                topic_summary=source_summary,
-                focus_keyword=focus_keyword,
-                regions=topic.trend_regions or ['International'],
-                public_concerns=topic.public_concerns or [],
-                trend_statements=topic.trend_statements or [],
-                trend_sentiment=topic.trend_sentiment or 'awareness',
-                statistics=topic.statistics or [],
-                humanization_guidance=guidance,
-                progress_callback=progress_callback,
-            )
-
-            if generated is None:
-                raise RuntimeError('Draft generation failed unexpectedly.')
-
-            await _report_progress(progress_callback, stage='quality_guard', progress=82, message='Running quality guard: readability, plagiarism, SEO, humanization.')
-            try:
-                qg_result = await self.quality_guard.validate_and_fix(
-                    draft=generated,
-                    source_text=source_summary,
-                    focus_keyword=focus_keyword,
-                )
-                generated = qg_result.draft
-                quality_readability = qg_result.readability_score
-                quality_ai_prob = qg_result.ai_generated_probability
-                quality_similarity = qg_result.source_similarity_score
-                quality_structure = qg_result.structure_valid
-                quality_notes = qg_result.quality_notes
-                # When quality guard flags plagiarism issues, force human review.
-                quality_requires_review = not qg_result.passed
-            except Exception:
-                logger.warning('Quality guard failed for topic %s, continuing with raw draft.', topic.id, exc_info=True)
-                quality_readability = None
-                quality_ai_prob = None
-                quality_similarity = None
-                quality_structure = True
-                quality_notes = ['quality_guard_skipped: guard raised an exception']
-                quality_requires_review = True
-
-            if quality_requires_review:
-                logger.info(
-                    'Quality guard flagged topic %s for review: %s',
-                    topic.id,
-                    ', '.join(quality_notes[:5]) if quality_notes else 'unknown',
-                )
-
-            # Cross-article deduplication: flag if content is too similar to an existing article.
-            try:
-                from app.services.article_quality_guard import _plain_text
-                article_plain = _plain_text(generated.content_html)
-                is_self_plagiarized, cross_score, matched_aid = await check_cross_article_similarity(
-                    db,
-                    article_text=article_plain,
-                    current_topic_id=topic.id,
-                )
-                if is_self_plagiarized:
-                    quality_requires_review = True
-                    cross_note = (
-                        f'cross_article_similarity={cross_score} exceeds {CROSS_ARTICLE_SIMILARITY_THRESHOLD} '
-                        f'(matched article_id={matched_aid})'
+                async with redis_lock(f'topic:{topic_id}:draft_generation', ttl_seconds=600):
+                    return await self._generate_draft_content(
+                        db, topic_id=topic_id, actor_id=actor_id, progress_callback=progress_callback
                     )
-                    quality_notes = (quality_notes or []) + [cross_note]
-                    logger.info('Cross-article dedup flagged topic %s: %s', topic.id, cross_note)
-            except Exception:
-                logger.warning('Cross-article dedup check failed for topic %s, continuing.', topic.id, exc_info=True)
-
-            await _report_progress(progress_callback, stage='finalizing_content', progress=88, message='Applying compliance and internal links.')
-            footer_blocks = [
-                build_footer_disclaimer(),
-                build_author_info(),
-                build_source_citation(topic),
-                build_internal_links_block(),
-                build_meta_data_block(
-                    seo_title=generated.seo_title,
-                    meta_description=generated.meta_description,
-                    keywords=generated.keywords,
-                ),
-            ]
-            content_html = f"{generated.content_html}\n\n<footer>{''.join(footer_blocks)}</footer>"
-            content_html = ensure_disclaimer(content_html)
-
-            slug = _generate_slug(generated.seo_title, topic.id)
-
-            if article is None:
-                article = Article(
-                    topic_id=topic.id,
-                    created_by=actor_id,
-                    content_html=content_html,
-                    seo_title=generated.seo_title,
-                    meta_description=generated.meta_description,
-                    keywords=generated.keywords,
-                    slug=slug,
-                    issue_summary=generated.issue_summary,
-                    why_it_matters=generated.why_it_matters,
-                    mental_health_implications=generated.mental_health_implications,
-                    professional_insight=generated.professional_insight,
-                    how_services_help=generated.how_services_help,
-                    call_to_action=generated.call_to_action,
-                    source_url=topic.source_url,
-                    status=ArticleStatus.DRAFT,
-                    requires_review=quality_requires_review,
-                    internal_links_added=True,
-                    readability_score=quality_readability,
-                    ai_generated_probability=quality_ai_prob,
-                    source_similarity_score=quality_similarity,
-                    structure_valid=quality_structure,
-                    quality_notes=quality_notes,
-                    social_posts=[],
+            except Exception as e:
+                logger.warning(
+                    'Draft generation attempt %d/%d failed for topic %s: %s',
+                    lock_attempt + 1, max_lock_retries, topic_id, str(e)
                 )
-                db.add(article)
-                await db.flush()
-            else:
-                article.content_html = content_html
-                article.seo_title = generated.seo_title
-                article.meta_description = generated.meta_description
-                article.keywords = generated.keywords
-                article.slug = slug
-                article.issue_summary = generated.issue_summary
-                article.why_it_matters = generated.why_it_matters
-                article.mental_health_implications = generated.mental_health_implications
-                article.professional_insight = generated.professional_insight
-                article.how_services_help = generated.how_services_help
-                article.call_to_action = generated.call_to_action
-                article.source_url = topic.source_url
-                article.readability_score = quality_readability
-                article.ai_generated_probability = quality_ai_prob
-                article.source_similarity_score = quality_similarity
-                article.structure_valid = quality_structure
-                article.quality_notes = quality_notes
-                article.status = ArticleStatus.DRAFT
-                article.approved_at = None
-                article.approved_by = None
-                article.published_at = None
-                article.published_url = None
-                article.requires_review = quality_requires_review
-                article.internal_links_added = True
-                posts_result = await db.execute(select(SocialPost).where(SocialPost.article_id == article.id))
-                article.social_posts = list(posts_result.scalars().all())
+                if lock_attempt == max_lock_retries - 1:
+                    # Last attempt failed, re-raise the exception
+                    raise
+                # Wait a bit before retrying
+                await asyncio.sleep(2 ** lock_attempt)  # Exponential backoff
+        
+        # This should never be reached, but just in case
+        raise RuntimeError(f'Failed to generate draft for topic {topic_id} after {max_lock_retries} attempts')
 
-            upsert_social_posts(article, generated.social_posts)
-            topic.status = TopicStatus.PROCESSED
-            await _report_progress(progress_callback, stage='saving', progress=94, message='Saving draft and audit records.')
+    async def _generate_draft_content(
+        self,
+        db: AsyncSession,
+        *,
+        topic_id: int,
+        actor_id: int | None,
+        progress_callback: ProgressCallback | None = None,
+    ) -> Article:
+        topic_result = await db.execute(select(Topic).where(Topic.id == topic_id))
+        topic = topic_result.scalar_one_or_none()
+        if topic is None:
+            raise ValueError('Topic not found')
 
+        if topic.status == TopicStatus.DUPLICATE_REJECTED:
+            raise DuplicateTopicError('Topic is already marked as duplicate')
+
+        existing_article_result = await db.execute(
+            select(Article)
+            .options(selectinload(Article.social_posts))
+            .where(Article.topic_id == topic.id)
+        )
+        article = existing_article_result.scalar_one_or_none()
+
+        is_duplicate, score, matched_topic_id, embedding = await self.duplicate_checker.check_topic(
+            db,
+            title=topic.title,
+            summary=topic.summary,
+            threshold=settings.duplicate_generation_similarity_threshold,
+        )
+        await _report_progress(progress_callback, stage='duplicate_check', progress=25, message='Checking for near-duplicate topics.')
+        topic.embedding = embedding
+
+        if is_duplicate and matched_topic_id and matched_topic_id != topic.id:
+            topic.status = TopicStatus.DUPLICATE_REJECTED
             await log_action(
                 db,
-                action='draft_generated',
-                entity_type='article',
-                entity_id=str(article.id),
+                action='topic_duplicate_rejected',
+                entity_type='topic',
+                entity_id=str(topic.id),
                 actor_id=actor_id,
-                details={'topic_id': topic.id},
+                details={'matched_topic_id': matched_topic_id, 'similarity': round(score, 4)},
+            )
+            await db.commit()
+            raise DuplicateTopicError(
+                'Near-duplicate topic detected; draft generation blocked.',
+                matched_topic_id=matched_topic_id,
+                score=score,
             )
 
-            await db.commit()
-            await db.refresh(article)
+        if not topic.statistics or not topic.trend_regions:
+            await _report_progress(progress_callback, stage='enrichment', progress=35, message='Enriching topic context and statistics.')
+            enriched = await self.enrichment.enrich(topic_title=topic.title, topic_summary=topic.summary)
+            topic.is_trending = enriched.is_trending
+            topic.trend_regions = enriched.regions
+            topic.public_concerns = enriched.public_concerns
+            topic.trend_statements = enriched.statements
+            topic.trend_sentiment = enriched.sentiment
+            topic.statistics = enriched.statistics
 
-            await _report_progress(progress_callback, stage='notifying', progress=98, message='Notifying reviewer about new draft.')
-            try:
-                await self.notifier.notify_new_draft(draft_id=article.id, topic_title=topic.title)
-            except Exception:
-                logger.warning('Failed to send notification for draft %s, continuing.', article.id, exc_info=True)
-            return article
+        source_summary = str(topic.summary or '').strip()
+        await _report_progress(
+            progress_callback,
+            stage='fetching_source_article',
+            progress=45,
+            message='Fetching trusted source article content for higher-fidelity drafting.',
+        )
+        try:
+            payload = await _fetch_article_payload(topic.source_url)
+            fetched_summary = str(payload.get('summary') or '').strip()
+            if fetched_summary:
+                source_summary = fetched_summary
+                topic.summary = fetched_summary
+        except RuntimeError:
+            # Continue with existing topic summary if source fetch fails.
+            pass
+
+        guidance = (
+            'Write with strong quality-by-prompt discipline. Keep SEO metadata strict and natural: focus keyword in '
+            'title, meta description, first paragraph, and at least one section heading. Keep readability at 6th-8th '
+            'grade with clear 12-20 word sentences and varied rhythm. Preserve the exact nine-section structure with '
+            'complete, useful content in each section. CRITICAL: Avoid plagiarism by fully paraphrasing source material — '
+            'never reproduce 7+ consecutive words from the source, change sentence structures, replace terminology with '
+            'synonyms, and reorganize the order of ideas. Reduce AI tone by using natural clinician language and varied '
+            'sentence openings. Use first-person voice naturally but not in every sentence. Avoid keyword stuffing, '
+            'duplicated lines, and template labels in section outputs.'
+        )
+
+        await _report_progress(
+            progress_callback,
+            stage='draft_generation',
+            progress=75,
+            message='Generating draft content with in-prompt quality constraints.',
+        )
+        focus_keyword = _derive_focus_keyword(topic.title, topic.related_keywords)
+
+        generated = await self.graph.run(
+            topic_title=topic.title,
+            topic_summary=source_summary,
+            focus_keyword=focus_keyword,
+            regions=topic.trend_regions or ['International'],
+            public_concerns=topic.public_concerns or [],
+            trend_statements=topic.trend_statements or [],
+            trend_sentiment=topic.trend_sentiment or 'awareness',
+            statistics=topic.statistics or [],
+            humanization_guidance=guidance,
+            progress_callback=progress_callback,
+        )
+
+        if generated is None:
+            raise RuntimeError('Draft generation failed unexpectedly.')
+
+        await _report_progress(progress_callback, stage='quality_guard', progress=82, message='Running quality guard: readability, plagiarism, SEO, humanization.')
+        try:
+            qg_result = await self.quality_guard.validate_and_fix(
+                draft=generated,
+                source_text=source_summary,
+                focus_keyword=focus_keyword,
+            )
+            generated = qg_result.draft
+            quality_readability = qg_result.readability_score
+            quality_ai_prob = qg_result.ai_generated_probability
+            quality_similarity = qg_result.source_similarity_score
+            quality_structure = qg_result.structure_valid
+            quality_notes = qg_result.quality_notes
+            # When quality guard flags plagiarism issues, force human review.
+            quality_requires_review = not qg_result.passed
+        except Exception:
+            logger.warning('Quality guard failed for topic %s, continuing with raw draft.', topic.id, exc_info=True)
+            quality_readability = None
+            quality_ai_prob = None
+            quality_similarity = None
+            quality_structure = True
+            quality_notes = ['quality_guard_skipped: guard raised an exception']
+            quality_requires_review = True
+
+        if quality_requires_review:
+            logger.info(
+                'Quality guard flagged topic %s for review: %s',
+                topic.id,
+                ', '.join(quality_notes[:5]) if quality_notes else 'unknown',
+            )
+
+        # Cross-article deduplication: flag if content is too similar to an existing article.
+        try:
+            from app.services.article_quality_guard import _plain_text
+            article_plain = _plain_text(generated.content_html)
+            is_self_plagiarized, cross_score, matched_aid = await check_cross_article_similarity(
+                db,
+                article_text=article_plain,
+                current_topic_id=topic.id,
+            )
+            if is_self_plagiarized:
+                quality_requires_review = True
+                cross_note = (
+                    f'cross_article_similarity={cross_score} exceeds {CROSS_ARTICLE_SIMILARITY_THRESHOLD} '
+                    f'(matched article_id={matched_aid})'
+                )
+                quality_notes = (quality_notes or []) + [cross_note]
+                logger.info('Cross-article dedup flagged topic %s: %s', topic.id, cross_note)
+        except Exception:
+            logger.warning('Cross-article dedup check failed for topic %s, continuing.', topic.id, exc_info=True)
+
+        await _report_progress(progress_callback, stage='finalizing_content', progress=88, message='Applying compliance and internal links.')
+        footer_blocks = [
+            build_footer_disclaimer(),
+            build_author_info(),
+            build_source_citation(topic),
+            build_internal_links_block(),
+            build_meta_data_block(
+                seo_title=generated.seo_title,
+                meta_description=generated.meta_description,
+                keywords=generated.keywords,
+            ),
+        ]
+        content_html = f"{generated.content_html}\n\n<footer>{''.join(footer_blocks)}</footer>"
+        content_html = ensure_disclaimer(content_html)
+
+        slug = _generate_slug(generated.seo_title, topic.id)
+
+        if article is None:
+            article = Article(
+                topic_id=topic.id,
+                created_by=actor_id,
+                content_html=content_html,
+                seo_title=generated.seo_title,
+                meta_description=generated.meta_description,
+                keywords=generated.keywords,
+                slug=slug,
+                issue_summary=generated.issue_summary,
+                why_it_matters=generated.why_it_matters,
+                mental_health_implications=generated.mental_health_implications,
+                professional_insight=generated.professional_insight,
+                how_services_help=generated.how_services_help,
+                call_to_action=generated.call_to_action,
+                source_url=topic.source_url,
+                status=ArticleStatus.DRAFT,
+                requires_review=quality_requires_review,
+                internal_links_added=True,
+                readability_score=quality_readability,
+                ai_generated_probability=quality_ai_prob,
+                source_similarity_score=quality_similarity,
+                structure_valid=quality_structure,
+                quality_notes=quality_notes,
+                social_posts=[],
+            )
+            db.add(article)
+            await db.flush()
+        else:
+            article.content_html = content_html
+            article.seo_title = generated.seo_title
+            article.meta_description = generated.meta_description
+            article.keywords = generated.keywords
+            article.slug = slug
+            article.issue_summary = generated.issue_summary
+            article.why_it_matters = generated.why_it_matters
+            article.mental_health_implications = generated.mental_health_implications
+            article.professional_insight = generated.professional_insight
+            article.how_services_help = generated.how_services_help
+            article.call_to_action = generated.call_to_action
+            article.source_url = topic.source_url
+            article.readability_score = quality_readability
+            article.ai_generated_probability = quality_ai_prob
+            article.source_similarity_score = quality_similarity
+            article.structure_valid = quality_structure
+            article.quality_notes = quality_notes
+            article.status = ArticleStatus.DRAFT
+            article.approved_at = None
+            article.approved_by = None
+            article.published_at = None
+            article.published_url = None
+            article.requires_review = quality_requires_review
+            article.internal_links_added = True
+            posts_result = await db.execute(select(SocialPost).where(SocialPost.article_id == article.id))
+            article.social_posts = list(posts_result.scalars().all())
+
+        upsert_social_posts(article, generated.social_posts)
+        topic.status = TopicStatus.PROCESSED
+        await _report_progress(progress_callback, stage='saving', progress=94, message='Saving draft and audit records.')
+
+        await log_action(
+            db,
+            action='draft_generated',
+            entity_type='article',
+            entity_id=str(article.id),
+            actor_id=actor_id,
+            details={'topic_id': topic.id},
+        )
+
+        await db.commit()
+        await db.refresh(article)
+
+        await _report_progress(progress_callback, stage='notifying', progress=98, message='Notifying reviewer about new draft.')
+        try:
+            await self.notifier.notify_new_draft(draft_id=article.id, topic_title=topic.title)
+        except Exception:
+            logger.warning('Failed to send notification for draft %s, continuing.', article.id, exc_info=True)
+        return article
 
 
 async def _report_progress(
