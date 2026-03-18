@@ -15,7 +15,7 @@ from app.services.prompt_service import PromptCatalog, get_prompt_catalog
 from app.workflows.types import GeneratedDraft
 
 settings = get_settings()
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 def _get_required_section_headings() -> list[str]:
     clinic = get_settings().clinic_name
@@ -104,6 +104,13 @@ class ArticleQualityGuard:
 
         # Then apply SEO fixes (keywords, density, structure) — single pass
         normalized = self._auto_fix_seo(draft=normalized, focus_keyword=focus_keyword)
+
+        # Step 4: Enforce canonical section headings — LLM rewrites sometimes
+        # corrupt h2 headings (e.g. "Summary of Issue and teens Help").
+        normalized = replace(
+            normalized,
+            content_html=_enforce_section_headings(normalized.content_html),
+        )
 
         plain_text = _plain_text(normalized.content_html)
         word_count = len(plain_text.split())
@@ -258,8 +265,9 @@ class ArticleQualityGuard:
     async def _auto_humanize(self, draft: GeneratedDraft, *, focus_keyword: str) -> GeneratedDraft:
         plain_text = _plain_text(draft.content_html)
         initial_probability = _heuristic_ai_probability(plain_text)
-        # Raised threshold: skip full humanization if probability <= 0.6 instead of 0.5
-        if initial_probability <= 0.6:
+        # Always run LLM humanization to ensure content passes AI-detection tools.
+        # Only skip if probability is very low (clearly already human-sounding).
+        if initial_probability <= 0.25:
             return replace(draft, content_html=_rule_based_humanize_html(draft.content_html))
 
         system_prompt, user_prompt = self.prompts.get_prompt(
@@ -693,7 +701,14 @@ def _normalize_rewritten_html(value: str) -> str:
     if not candidate:
         return ''
 
+    # Strip markdown code blocks if present
+    if candidate.startswith('```html') and candidate.endswith('```'):
+        candidate = candidate[7:-3].strip()
+    elif candidate.startswith('```') and candidate.endswith('```'):
+        candidate = candidate[3:-3].strip()
+
     if '<h1' in candidate.lower() and '<section' in candidate.lower() and '<h2' in candidate.lower():
+        candidate = _enforce_section_headings(candidate)
         return candidate
     return ''
 
@@ -936,3 +951,34 @@ def _trim_content_to_target_length(content_html: str, *, target_max: int, target
             return trimmed
     
     return content_html
+
+def _enforce_section_headings(content_html: str) -> str:
+    """Force h2 headings back to their exact expected values.
+
+    The LLM humanization rewrite sometimes appends extra words to headings
+    (e.g. "Summary of Issue and teens Help"). This strips anything the LLM
+    added after the canonical heading text.
+    """
+    clinic = get_settings().clinic_name
+    # Map: lowercase canonical heading -> exact heading to use
+    canonical_headings = {
+        'summary of issue': 'Summary of Issue',
+        'why this matters': 'Why This Matters',
+        'mental health implications': 'Mental Health Implications',
+        'professional insight': 'Professional Insight',
+        f'how {clinic.lower()} can help': f'How {clinic} Can Help',
+        'take the next step': 'Take the Next Step (CTA)',
+        'take the next step (cta)': 'Take the Next Step (CTA)',
+    }
+
+    def _fix_h2(match: re.Match) -> str:
+        tag_open = match.group(1)   # e.g. '<h2>' or '<h2 class="...">'
+        inner = match.group(2)      # heading text (may have extra words)
+        tag_close = match.group(3)  # '</h2>'
+        inner_lower = inner.strip().lower()
+        for canonical_lower, canonical_exact in canonical_headings.items():
+            if inner_lower.startswith(canonical_lower):
+                return f'{tag_open}{canonical_exact}{tag_close}'
+        return match.group(0)
+
+    return re.sub(r'(<h2[^>]*>)(.*?)(</h2>)', _fix_h2, content_html, flags=re.IGNORECASE | re.DOTALL)

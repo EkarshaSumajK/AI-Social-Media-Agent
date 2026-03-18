@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { StatusBadge } from '@/components/status-badge';
 import { TipTapEditor } from '@/components/tiptap-editor';
-import { approveDraft, fetchDraft, publishDraft, publishSocial, rejectDraft, updateDraft } from '@/lib/api';
+import { approveDraft, fetchDraft, generateAIImage, publishDraft, publishSocial, rejectDraft, updateDraft } from '@/lib/api';
 import type { Article } from '@/lib/types';
 
 interface DraftForm {
@@ -330,24 +331,15 @@ export default function DraftDetailPage() {
         />
       </section>
 
-      <section className="rounded-lg border bg-card text-card-foreground shadow-sm p-5">
-        <h2 className="mb-3 text-2xl font-bold text-ink">Social Captions</h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          {Object.entries(form.social_posts).map(([platform, caption]) => (
-            <TextAreaField
-              key={platform}
-              label={platform}
-              value={caption}
-              onChange={(value) =>
-                setForm((prev) => ({
-                  ...prev,
-                  social_posts: { ...prev.social_posts, [platform]: value },
-                }))
-              }
-            />
-          ))}
-        </div>
-      </section>
+      <SocialCaptionsSection
+        form={form}
+        setForm={setForm}
+        draft={draft}
+        onImageGenerated={async () => {
+          const refreshed = await fetchDraft(draftId);
+          setDraft(refreshed);
+        }}
+      />
 
       <section className="rounded-lg border bg-card text-card-foreground shadow-sm p-5">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -545,23 +537,23 @@ function mapDraftToForm(draft: Article): DraftForm {
     call_to_action: cleanMarkdownText(draft.call_to_action),
     social_posts: {
       instagram: cleanMarkdownText(
-        draft.social_posts.find((s) => s.platform === 'instagram')?.edited_caption ||
-          draft.social_posts.find((s) => s.platform === 'instagram')?.caption ||
+        draft.social_posts.find((s) => s.platform.toLowerCase() === 'instagram')?.edited_caption ||
+          draft.social_posts.find((s) => s.platform.toLowerCase() === 'instagram')?.caption ||
           ''
       ),
       linkedin: cleanMarkdownText(
-        draft.social_posts.find((s) => s.platform === 'linkedin')?.edited_caption ||
-          draft.social_posts.find((s) => s.platform === 'linkedin')?.caption ||
+        draft.social_posts.find((s) => s.platform.toLowerCase() === 'linkedin')?.edited_caption ||
+          draft.social_posts.find((s) => s.platform.toLowerCase() === 'linkedin')?.caption ||
           ''
       ),
       twitter: cleanMarkdownText(
-        draft.social_posts.find((s) => s.platform === 'twitter')?.edited_caption ||
-          draft.social_posts.find((s) => s.platform === 'twitter')?.caption ||
+        draft.social_posts.find((s) => s.platform.toLowerCase() === 'twitter')?.edited_caption ||
+          draft.social_posts.find((s) => s.platform.toLowerCase() === 'twitter')?.caption ||
           ''
       ),
       facebook: cleanMarkdownText(
-        draft.social_posts.find((s) => s.platform === 'facebook')?.edited_caption ||
-          draft.social_posts.find((s) => s.platform === 'facebook')?.caption ||
+        draft.social_posts.find((s) => s.platform.toLowerCase() === 'facebook')?.edited_caption ||
+          draft.social_posts.find((s) => s.platform.toLowerCase() === 'facebook')?.caption ||
           ''
       ),
     },
@@ -571,9 +563,18 @@ function mapDraftToForm(draft: Article): DraftForm {
 function sanitizeDraftHtml(value: string): string {
   let html = String(value || '');
 
+  // Strip markdown code blocks if present
+  if (html.startsWith('```html') && html.endsWith('```')) {
+    html = html.slice(7, -3).trim();
+  } else if (html.startsWith('```') && html.endsWith('```')) {
+    html = html.slice(3, -3).trim();
+  }
+
   html = html.replace(/<script[\s\S]*?<\/script>/gi, '');
   html = html.replace(/<style[\s\S]*?<\/style>/gi, '');
   html = html.replace(/Intro:\s*Summary of Issue/gi, 'Summary of Issue');
+  // Fix LLM-corrupted headings: "Summary of Issue and [topic]" → "Summary of Issue"
+  html = html.replace(/(<h2[^>]*>)\s*Summary of Issue\s+and\s+[^<]*/gi, '$1Summary of Issue');
 
   // Remove leaked metadata/debug lines that should never be in article body.
   html = html.replace(/<p>\s*(topic:|x heading:|relevance\b|source\b|regions:|stats:)[\s\S]*?<\/p>/gi, '');
@@ -1063,5 +1064,126 @@ function TextAreaField({ label, value, onChange }: { label: string; value: strin
       <label className="mb-1 block text-sm font-medium capitalize text-ink-soft">{label}</label>
       <Textarea className="min-h-32" value={value} onChange={(event) => onChange(event.target.value)} />
     </div>
+  );
+}
+const PLATFORM_LABELS: Record<string, string> = {
+  instagram: '📸 Instagram (1080×1080)',
+  linkedin: '💼 LinkedIn (1200×627)',
+  twitter: '🐦 Twitter/X (1600×900)',
+  facebook: '👥 Facebook (1200×630)',
+};
+
+function SocialCaptionsSection({
+  form,
+  setForm,
+  draft,
+  onImageGenerated,
+}: {
+  form: DraftForm;
+  setForm: React.Dispatch<React.SetStateAction<DraftForm>>;
+  draft: Article;
+  onImageGenerated: () => Promise<void>;
+}) {
+  const [imageLoading, setImageLoading] = useState<Record<string, boolean>>({});
+  const [imageError, setImageError] = useState<Record<string, string>>({});
+  const [previewImage, setPreviewImage] = useState<{ url: string; platform: string } | null>(null);
+
+  const handleGenerateImage = async (platform: string) => {
+    setImageLoading((prev) => ({ ...prev, [platform]: true }));
+    setImageError((prev) => ({ ...prev, [platform]: '' }));
+    try {
+      const result = await generateAIImage(draft.id, platform);
+      await onImageGenerated();
+      setPreviewImage({ url: result.image_url, platform });
+    } catch (err) {
+      setImageError((prev) => ({ ...prev, [platform]: err instanceof Error ? err.message : 'Failed to generate image' }));
+    } finally {
+      setImageLoading((prev) => ({ ...prev, [platform]: false }));
+    }
+  };
+
+  return (
+    <>
+      <section className="rounded-lg border bg-card text-card-foreground shadow-sm p-5">
+        <h2 className="mb-3 text-2xl font-bold text-ink">Social Captions</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          {Object.entries(form.social_posts).map(([platform, caption]) => {
+            const existingImage = draft.social_posts.find((s) => s.platform === platform)?.image_url;
+            const loading = imageLoading[platform] || false;
+            const error = imageError[platform] || '';
+
+            return (
+              <div key={platform} className="space-y-2">
+                <TextAreaField
+                  label={platform}
+                  value={caption}
+                  onChange={(value) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      social_posts: { ...prev.social_posts, [platform]: value },
+                    }))
+                  }
+                />
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleGenerateImage(platform)}
+                    disabled={loading || !caption.trim()}
+                  >
+                    {loading ? 'Generating...' : existingImage ? 'Regenerate Image' : 'Generate AI Image'}
+                  </Button>
+                  <span className="text-xs text-ink-soft">{PLATFORM_LABELS[platform] || platform}</span>
+                  {existingImage && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setPreviewImage({ url: existingImage, platform })}
+                    >
+                      Preview
+                    </Button>
+                  )}
+                </div>
+
+                {error && <p className="text-xs text-red-500">{error}</p>}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="capitalize">{previewImage?.platform} — AI Generated Image</DialogTitle>
+            <DialogDescription>
+              {PLATFORM_LABELS[previewImage?.platform || ''] || 'Generated with gpt-image-1'}
+            </DialogDescription>
+          </DialogHeader>
+          {previewImage && (
+            <div className="flex flex-col items-center gap-3">
+              <img
+                src={previewImage.url}
+                alt={`${previewImage.platform} AI generated`}
+                className="rounded-lg border max-w-full max-h-[60vh] object-contain"
+              />
+              <div className="flex gap-2">
+                <a
+                  href={previewImage.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button size="sm" variant="outline">Open Full Image</Button>
+                </a>
+                <a href={previewImage.url} download={`${previewImage.platform}-image.png`}>
+                  <Button size="sm" variant="outline">Download</Button>
+                </a>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

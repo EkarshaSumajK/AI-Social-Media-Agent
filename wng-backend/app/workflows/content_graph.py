@@ -17,7 +17,7 @@ from app.services.prompt_service import PromptCatalog, get_prompt_catalog
 from app.workflows.types import ContentState, GeneratedDraft
 
 settings = get_settings()
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 QUALITY_FIRST_CHECKLIST = (
     'Quality-first drafting rules:\n'
     '- Write as a clinician speaking directly to parents. Use first-person plural voice (we, our, us) regularly throughout — at least 3-4 times per section.\n'
@@ -30,10 +30,33 @@ QUALITY_FIRST_CHECKLIST = (
     'Do not reproduce any phrase of 7 or more consecutive words from the source material. '
     'Change sentence structures, replace terminology with synonyms, and reorganize the order of ideas.\n'
     '- Avoid repeated 4-word phrase patterns, repeated sentences, and repetitive transition templates.\n'
-    '- Reduce AI tone: vary sentence openings/lengths, use natural human rhythm, and include occasional contractions.\n'
+    '- CRITICAL humanization rules to avoid AI-detection:\n'
+    '  * NEVER use these AI-typical phrases: "It is important to", "It is essential to", "It is crucial", '
+    '"This can be", "This may be", "By doing this", "By understanding", "Let\'s explore", '
+    '"Together, we can", "In today\'s world", "Remember that", "Take the first step".\n'
+    '  * NEVER start consecutive sentences the same way. Vary openers: questions, short fragments, mid-sentence subjects, temporal phrases, anecdotes.\n'
+    '  * Mix sentence lengths aggressively: follow a 20-word sentence with a 5-word one. Use fragments. "Not always easy. But worth it."\n'
+    '  * Use contractions naturally: "we\'re", "they\'re", "can\'t", "don\'t", "isn\'t", "won\'t", "it\'s" — at least 4-5 per section.\n'
+    '  * Include 1-2 rhetorical questions per section. "Sound familiar?" or "What does this look like at home?"\n'
+    '  * Write like you\'re talking across a kitchen table, not presenting at a conference. Be warm and slightly informal.\n'
+    '  * Avoid perfect parallel structure. Real writers don\'t use the same sentence pattern three times in a row.\n'
+    '  * Drop occasional filler words humans use: "actually", "honestly", "really", "just", "quite".\n'
+    '  * NEVER end a paragraph with a generic hopeful statement like "Together, we can support our children."\n'
     '- Include the focus keyword naturally without stuffing: in SEO title, meta description, first paragraph, and one relevant section heading.\n'
     '- Keep claims factual and cautious; do not invent data, quotes, or citations.\n'
 )
+
+
+def _clean_markdown_blocks(text: str) -> str:
+    """Remove markdown code block markers from LLM responses."""
+    text = text.strip()
+    if text.startswith('```html') and text.endswith('```'):
+        return text[7:-3].strip()
+    elif text.startswith('```') and text.endswith('```'):
+        return text[3:-3].strip()
+    return text
+
+
 def _get_template_heading_markers() -> frozenset[str]:
     clinic = settings.clinic_name.lower()
     return frozenset({
@@ -436,8 +459,8 @@ class ContentGraphRunner:
             filter(
                 None,
                 [
-                    str(state.get('opening_scenario', '')).strip(),
-                    str(state.get('child_experience', '')).strip(),
+                    _clean_markdown_blocks(str(state.get('opening_scenario', '')).strip()),
+                    _clean_markdown_blocks(str(state.get('child_experience', '')).strip()),
                 ],
             )
         )
@@ -445,23 +468,23 @@ class ContentGraphRunner:
             filter(
                 None,
                 [
-                    str(state.get('real_life_effects', '')).strip(),
-                    str(state.get('parent_misunderstandings', '')).strip(),
+                    _clean_markdown_blocks(str(state.get('real_life_effects', '')).strip()),
+                    _clean_markdown_blocks(str(state.get('parent_misunderstandings', '')).strip()),
                 ],
             )
         )
-        mental_implications_text = str(state.get('science_explanation', '')).strip()
+        mental_implications_text = _clean_markdown_blocks(str(state.get('science_explanation', '')).strip())
         professional_insight_text = '\n\n'.join(
             filter(
                 None,
                 [
-                    str(state.get('guidance_steps', '')).strip(),
-                    str(state.get('when_to_seek_help', '')).strip(),
+                    _clean_markdown_blocks(str(state.get('guidance_steps', '')).strip()),
+                    _clean_markdown_blocks(str(state.get('when_to_seek_help', '')).strip()),
                 ],
             )
         )
-        services_text = str(state.get('services_help', '')).strip()
-        cta_text = str(state.get('reassuring_close', '')).strip()
+        services_text = _clean_markdown_blocks(str(state.get('services_help', '')).strip())
+        cta_text = _clean_markdown_blocks(str(state.get('reassuring_close', '')).strip())
 
         sections = _fit_sections_to_word_target(
             sections={

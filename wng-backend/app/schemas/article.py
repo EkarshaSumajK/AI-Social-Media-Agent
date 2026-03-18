@@ -13,6 +13,7 @@ class SocialPostOut(BaseModel):
     status: str
     external_post_id: str | None = None
     error_message: str | None = None
+    image_url: str | None = None
     posted_at: datetime | None = None
 
 

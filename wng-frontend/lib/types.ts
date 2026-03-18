@@ -109,6 +109,7 @@ export interface SocialPost {
   status: string;
   external_post_id?: string;
   error_message?: string;
+  image_url?: string;
   posted_at?: string;
 }
 
