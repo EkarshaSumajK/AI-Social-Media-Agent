@@ -72,7 +72,7 @@ async def generate_ai_image(
     try:
         service = ImageService()
         image_url = await service.generate_and_upload(
-            platform=payload.platform,
+            platform=payload.platform.lower(),
             caption=caption,
             article_title=article.seo_title or '',
             article_summary=article_summary,
@@ -118,7 +118,7 @@ async def generate_ai_image_from_text(
     try:
         service = ImageService()
         image_url = await service.generate_and_upload(
-            platform=payload.platform,
+            platform=payload.platform.lower(),
             caption=caption,
             article_title=payload.title.strip() or 'Mental Health Awareness',
             article_summary=payload.context.strip(),

@@ -1092,7 +1092,7 @@ function SocialCaptionsSection({
     setImageLoading((prev) => ({ ...prev, [platform]: true }));
     setImageError((prev) => ({ ...prev, [platform]: '' }));
     try {
-      const result = await generateAIImage(draft.id, platform);
+      const result = await generateAIImage(draft.id, platform.toUpperCase());
       await onImageGenerated();
       setPreviewImage({ url: result.image_url, platform });
     } catch (err) {

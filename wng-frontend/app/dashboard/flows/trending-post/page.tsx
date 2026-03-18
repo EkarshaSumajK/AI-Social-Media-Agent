@@ -6,6 +6,7 @@ import {
   Sparkles, TrendingUp, Zap,
 } from 'lucide-react';
 
+import { AIImageButton } from '@/components/ai-image-button';
 import { ImageGeneratorModal } from '@/components/image-generator/ImageGeneratorModal';
 import type { Platform } from '@/components/image-generator/types';
 
@@ -271,8 +272,13 @@ function PlatformCard({ platform, result, loading, error, onParaphrase, paraphra
               title="Generate Image"
               className="flex h-7 items-center gap-1 rounded-md border border-white/[0.06] bg-white/[0.03] px-2 text-[11px] text-ink-faint transition hover:border-apple-blue/30 hover:bg-apple-blue/10 hover:text-apple-blue"
             >
-              <ImageIcon size={11} /> Image
+              <ImageIcon size={11} /> Template
             </button>
+            <AIImageButton
+              caption={result.content}
+              platform={platform.id}
+              title={`${platform.label} - ${result.content_type}`}
+            />
             <button
               type="button"
               onClick={() => setShowParaphrase(!showParaphrase)}

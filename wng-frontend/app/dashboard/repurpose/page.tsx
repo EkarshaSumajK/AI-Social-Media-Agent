@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Check, Copy, ImageIcon, Loader2, Send, X } from 'lucide-react';
 
+import { AIImageButton } from '@/components/ai-image-button';
 import { ImageGeneratorModal } from '@/components/image-generator/ImageGeneratorModal';
 import type { Platform } from '@/components/image-generator/types';
 import { PageHeader } from '@/components/page-header';
@@ -286,8 +287,13 @@ export default function RepurposePage() {
                       onClick={() => setImageModal({ open: true, content: output.content, platform: FORMAT_TO_PLATFORM[output.format] ?? 'linkedin' })}
                       className="flex h-7 items-center gap-1 rounded-md border border-white/[0.06] bg-white/[0.03] px-2 text-[11px] text-ink-faint transition hover:border-apple-blue/30 hover:bg-apple-blue/10 hover:text-apple-blue"
                     >
-                      <ImageIcon size={11} /> Image
+                      <ImageIcon size={11} /> Template
                     </button>
+                    <AIImageButton
+                      caption={output.content}
+                      platform={FORMAT_TO_PLATFORM[output.format] ?? 'instagram'}
+                      title={`${FORMAT_LABELS[output.format] || output.format} - Repurposed`}
+                    />
                     <CopyButton text={output.content} />
                   </div>
                 </div>

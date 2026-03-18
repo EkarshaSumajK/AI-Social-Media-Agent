@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Copy, ImageIcon, Loader2, Send, X } from 'lucide-react';
 
+import { AIImageButton } from '@/components/ai-image-button';
 import { ImageGeneratorModal } from '@/components/image-generator/ImageGeneratorModal';
 import { PageHeader } from '@/components/page-header';
 import { AppSelect } from '@/components/ui/app-select';
@@ -522,8 +523,13 @@ export default function AudienceContentPage() {
                       onClick={() => setImageModal({ open: true, content: value })}
                       className="flex h-7 items-center gap-1 rounded-md border border-white/[0.06] bg-white/[0.03] px-2 text-[11px] text-ink-faint transition hover:border-apple-blue/30 hover:bg-apple-blue/10 hover:text-apple-blue"
                     >
-                      <ImageIcon size={11} /> Image
+                      <ImageIcon size={11} /> Template
                     </button>
+                    <AIImageButton
+                      caption={value}
+                      platform="instagram"
+                      title={RESULT_LABELS[key] || titleize(key)}
+                    />
                     <CopyButton text={value} />
                   </div>
                 </div>

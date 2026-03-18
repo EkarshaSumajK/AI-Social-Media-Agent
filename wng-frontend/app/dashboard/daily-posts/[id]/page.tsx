@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Check, Copy, ImageIcon, Loader2, Send, X } from 'lucide-react';
 
+import { AIImageButton } from '@/components/ai-image-button';
 import { ImageGeneratorModal } from '@/components/image-generator/ImageGeneratorModal';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
@@ -165,8 +166,13 @@ function PostCard({ post, index, onGenerateImage }: { post: DailyPostSuggestion;
           />
           <Button size="sm" variant="outline" className="h-7 gap-1.5 text-xs px-2" onClick={onGenerateImage}>
             <ImageIcon size={12} />
-            Image
+            Template
           </Button>
+          <AIImageButton
+            caption={post.content}
+            platform={PLATFORM_MAP[post.platform_hint?.toLowerCase() ?? ''] ?? 'instagram'}
+            title={`${typeStyle.label} - ${platformStyle?.label || 'Social'}`}
+          />
           <CopyButton text={post.content} />
         </div>
       </CardHeader>

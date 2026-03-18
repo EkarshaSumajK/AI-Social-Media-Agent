@@ -146,7 +146,7 @@ class ImageService:
         article_title: str,
         article_summary: str = '',
     ) -> bytes:
-        config = PLATFORM_CONFIG.get(platform)
+        config = PLATFORM_CONFIG.get(platform.lower())
         if not config:
             raise ValueError(f'Unsupported platform: {platform}')
 

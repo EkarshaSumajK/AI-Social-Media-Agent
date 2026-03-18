@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CalendarDays, Layers3, Loader2, Megaphone, Sparkles } from 'lucide-react';
 
+import { AIImageButton } from '@/components/ai-image-button';
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -198,6 +199,11 @@ export default function CampaignDetailPage() {
                                 {piece.content_type}
                               </Badge>
                               <span className="text-ink-faint">{formatPlatform(piece.platform)}</span>
+                              <AIImageButton
+                                caption={piece.content}
+                                platform={piece.platform || 'instagram'}
+                                title={`${formatPhase(phase)} - ${piece.content_type}`}
+                              />
                             </div>
                             <p className="whitespace-pre-wrap break-words text-sm text-ink">{piece.content}</p>
                           </div>

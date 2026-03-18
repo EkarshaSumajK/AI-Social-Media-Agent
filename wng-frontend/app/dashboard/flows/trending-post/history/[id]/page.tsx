@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Copy, ImageIcon, Loader2 } from 'lucide-react';
 
+import { AIImageButton } from '@/components/ai-image-button';
 import { ImageGeneratorModal } from '@/components/image-generator/ImageGeneratorModal';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
@@ -133,8 +134,13 @@ export default function PlatformContentHistoryDetailPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => setImageOpen(true)}>
-                  <ImageIcon size={13} /> Generate Image
+                  <ImageIcon size={13} /> Template
                 </Button>
+                <AIImageButton
+                  caption={item.content}
+                  platform={PLATFORM_MAP[item.platform.toLowerCase()] ?? 'instagram'}
+                  title={`${item.platform} - ${prettyContentType(item.content_type)}`}
+                />
                 <CopyButton text={item.content} />
               </div>
             </CardHeader>
