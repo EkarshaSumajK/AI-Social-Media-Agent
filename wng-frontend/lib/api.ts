@@ -553,3 +553,10 @@ export async function generateAIImageFromText(data: {
     body: JSON.stringify(data),
   });
 }
+
+export async function generateArticleFieldImage(articleId: number, fieldKey: string): Promise<{ image_url: string; field_key: string; article_id: number }> {
+  return request('/ai-images/generate-article-field', {
+    method: 'POST',
+    body: JSON.stringify({ article_id: articleId, field_key: fieldKey }),
+  });
+}

@@ -134,6 +134,8 @@ export interface Article {
   structure_valid: boolean;
   quality_notes?: string[];
   source_url: string;
+  body_image_url?: string;
+  field_image_urls?: Record<string, string>;
   platform: string;
   slug?: string;
   virality_score?: number;

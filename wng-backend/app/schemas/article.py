@@ -57,6 +57,8 @@ class ArticleOut(BaseModel):
     structure_valid: bool
     quality_notes: list[str] | None = None
     source_url: str
+    body_image_url: str | None = None
+    field_image_urls: dict[str, str] | None = None
     platform: str
     slug: str | None = None
     virality_score: float | None = None

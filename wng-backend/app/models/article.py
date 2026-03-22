@@ -32,6 +32,8 @@ class Article(Base):
     quality_notes: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
 
     source_url: Mapped[str] = mapped_column(String(2048))
+    body_image_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    field_image_urls: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     status: Mapped[ArticleStatus] = mapped_column(Enum(ArticleStatus), default=ArticleStatus.DRAFT, index=True)
     platform: Mapped[Platform] = mapped_column(Enum(Platform, values_callable=lambda obj: [e.value for e in obj]), default=Platform.HORIZON, index=True)
     slug: Mapped[str | None] = mapped_column(String(500), unique=True, nullable=True, index=True)

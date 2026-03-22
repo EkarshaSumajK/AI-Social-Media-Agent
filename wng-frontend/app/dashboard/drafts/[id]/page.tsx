@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { StatusBadge } from '@/components/status-badge';
 import { TipTapEditor } from '@/components/tiptap-editor';
-import { approveDraft, fetchDraft, generateAIImage, publishDraft, publishSocial, rejectDraft, updateDraft } from '@/lib/api';
+import { approveDraft, fetchDraft, generateAIImage, generateArticleFieldImage, publishDraft, publishSocial, rejectDraft, updateDraft } from '@/lib/api';
 import type { Article } from '@/lib/types';
 
 interface DraftForm {
@@ -106,6 +106,8 @@ export default function DraftDetailPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<{ url: string; label: string } | null>(null);
+  const [imageGenerating, setImageGenerating] = useState<string | null>(null);
 
   async function loadDraft() {
     setLoading(true);
@@ -248,6 +250,22 @@ export default function DraftDetailPage() {
     }
   }
 
+  async function handleGenerateFieldImage(fieldKey: string, label: string) {
+    if (!draft) return;
+    setImageGenerating(fieldKey);
+    setError(null);
+    try {
+      const result = await generateArticleFieldImage(draft.id, fieldKey);
+      const refreshed = await fetchDraft(draftId);
+      setDraft(refreshed);
+      setImagePreview({ url: result.image_url, label });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate image');
+    } finally {
+      setImageGenerating(null);
+    }
+  }
+
   if (loading) {
     return <main className="p-4 text-sm text-ink-soft sm:p-8">Loading draft...</main>;
   }
@@ -294,41 +312,70 @@ export default function DraftDetailPage() {
       </section>
 
       <section className="rounded-lg border bg-card text-card-foreground shadow-sm p-5 draft-body-editor">
-        <h2 className="mb-3 text-2xl font-bold text-ink">Article Body (TipTap)</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-ink">Article Body (TipTap)</h2>
+          <div className="flex items-center gap-2">
+            {draft.body_image_url && (
+              <Button
+                size="sm"
+                className="bg-violet-600 text-white hover:bg-violet-500 border-0"
+                onClick={() => setImagePreview({ url: draft.body_image_url!, label: 'Article Body Infographic' })}
+              >
+                Peek Image
+              </Button>
+            )}
+            <Button
+              size="sm"
+              className="bg-teal-600 text-white hover:bg-teal-500 border-0"
+              disabled={imageGenerating === 'content_html' || !stripHtmlToText(form.content_html).trim()}
+              onClick={() => handleGenerateFieldImage('content_html', 'Article Body Infographic')}
+            >
+              {imageGenerating === 'content_html' ? 'Generating...' : draft.body_image_url ? 'Regenerate Infographic' : 'Generate Infographic'}
+            </Button>
+          </div>
+        </div>
         <TipTapEditor value={form.content_html} onChange={(value) => setForm((prev) => ({ ...prev, content_html: value }))} />
       </section>
 
       <section className="rounded-lg border bg-card text-card-foreground shadow-sm grid gap-4 p-5 md:grid-cols-2">
-        <TextAreaField
-          label="Issue Summary"
-          value={form.issue_summary}
-          onChange={(value) => setForm((prev) => ({ ...prev, issue_summary: value }))}
-        />
-        <TextAreaField
-          label="Why It Matters"
-          value={form.why_it_matters}
-          onChange={(value) => setForm((prev) => ({ ...prev, why_it_matters: value }))}
-        />
-        <TextAreaField
-          label="Mental Health Implications"
-          value={form.mental_health_implications}
-          onChange={(value) => setForm((prev) => ({ ...prev, mental_health_implications: value }))}
-        />
-        <TextAreaField
-          label="Professional Insight"
-          value={form.professional_insight}
-          onChange={(value) => setForm((prev) => ({ ...prev, professional_insight: value }))}
-        />
-        <TextAreaField
-          label="How Our Services Help"
-          value={form.how_services_help}
-          onChange={(value) => setForm((prev) => ({ ...prev, how_services_help: value }))}
-        />
-        <TextAreaField
-          label="Call To Action"
-          value={form.call_to_action}
-          onChange={(value) => setForm((prev) => ({ ...prev, call_to_action: value }))}
-        />
+        {[
+          { key: 'issue_summary', label: 'Issue Summary' },
+          { key: 'why_it_matters', label: 'Why It Matters' },
+          { key: 'mental_health_implications', label: 'Mental Health Implications' },
+          { key: 'professional_insight', label: 'Professional Insight' },
+          { key: 'how_services_help', label: 'How Our Services Help' },
+          { key: 'call_to_action', label: 'Call To Action' },
+        ].map(({ key, label }) => {
+          const fieldImageUrl = draft.field_image_urls?.[key];
+          return (
+          <div key={key} className="space-y-1">
+            <TextAreaField
+              label={label}
+              value={form[key as keyof DraftForm] as string}
+              onChange={(value) => setForm((prev) => ({ ...prev, [key]: value }))}
+            />
+            <div className="flex items-center gap-2">
+              {fieldImageUrl && (
+                <Button
+                  size="sm"
+                  className="bg-violet-600 text-white hover:bg-violet-500 border-0"
+                  onClick={() => setImagePreview({ url: fieldImageUrl, label: `${label} Infographic` })}
+                >
+                  Peek
+                </Button>
+              )}
+              <Button
+                size="sm"
+                className="bg-teal-600 text-white hover:bg-teal-500 border-0"
+                disabled={imageGenerating === key || !(form[key as keyof DraftForm] as string).trim()}
+                onClick={() => handleGenerateFieldImage(key, `${label} Infographic`)}
+              >
+                {imageGenerating === key ? 'Generating...' : fieldImageUrl ? 'Regenerate Infographic' : 'Generate Infographic'}
+              </Button>
+            </div>
+          </div>
+          );
+        })}
       </section>
 
       <SocialCaptionsSection
@@ -519,6 +566,32 @@ export default function DraftDetailPage() {
           </>
         )}
       </section>
+
+      <Dialog open={!!imagePreview} onOpenChange={(open) => !open && setImagePreview(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{imagePreview?.label || 'Generated Infographic'}</DialogTitle>
+            <DialogDescription>AI-generated infographic using gpt-image-1</DialogDescription>
+          </DialogHeader>
+          {imagePreview && (
+            <div className="flex flex-col items-center gap-3">
+              <img
+                src={imagePreview.url}
+                alt={imagePreview.label}
+                className="rounded-lg border max-w-full max-h-[60vh] object-contain"
+              />
+              <div className="flex gap-2">
+                <a href={imagePreview.url} target="_blank" rel="noopener noreferrer">
+                  <Button size="sm" variant="outline">Open Full Image</Button>
+                </a>
+                <a href={imagePreview.url} download={`${imagePreview.label.toLowerCase().replace(/\s+/g, '-')}.png`}>
+                  <Button size="sm" variant="outline">Download</Button>
+                </a>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
@@ -1108,7 +1181,7 @@ function SocialCaptionsSection({
         <h2 className="mb-3 text-2xl font-bold text-ink">Social Captions</h2>
         <div className="grid gap-4 md:grid-cols-2">
           {Object.entries(form.social_posts).map(([platform, caption]) => {
-            const existingImage = draft.social_posts.find((s) => s.platform === platform)?.image_url;
+            const existingImage = draft.social_posts.find((s) => s.platform.toLowerCase() === platform)?.image_url;
             const loading = imageLoading[platform] || false;
             const error = imageError[platform] || '';
 
@@ -1126,24 +1199,24 @@ function SocialCaptionsSection({
                 />
 
                 <div className="flex items-center gap-2">
+                  {existingImage && (
+                    <Button
+                      size="sm"
+                      className="bg-violet-600 text-white hover:bg-violet-500 border-0"
+                      onClick={() => setPreviewImage({ url: existingImage, platform })}
+                    >
+                      Peek
+                    </Button>
+                  )}
                   <Button
                     size="sm"
-                    variant="outline"
+                    className="bg-teal-600 text-white hover:bg-teal-500 border-0"
                     onClick={() => handleGenerateImage(platform)}
                     disabled={loading || !caption.trim()}
                   >
                     {loading ? 'Generating...' : existingImage ? 'Regenerate Image' : 'Generate AI Image'}
                   </Button>
                   <span className="text-xs text-ink-soft">{PLATFORM_LABELS[platform] || platform}</span>
-                  {existingImage && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setPreviewImage({ url: existingImage, platform })}
-                    >
-                      Preview
-                    </Button>
-                  )}
                 </div>
 
                 {error && <p className="text-xs text-red-500">{error}</p>}

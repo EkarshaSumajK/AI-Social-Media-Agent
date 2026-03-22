@@ -14,7 +14,15 @@ from app.services.image_service import ImageService
 
 router = APIRouter()
 
-VALID_PLATFORMS = {p.value for p in SocialPlatform}
+VALID_PLATFORMS = {p.value for p in SocialPlatform} | {'ARTICLE_BODY'}
+VALID_FIELD_KEYS = {
+    'issue_summary',
+    'why_it_matters',
+    'mental_health_implications',
+    'professional_insight',
+    'how_services_help',
+    'call_to_action',
+}
 
 
 class GenerateAIImageRequest(BaseModel):
@@ -130,3 +138,96 @@ async def generate_ai_image_from_text(
         image_url=image_url,
         platform=payload.platform,
     )
+
+
+class GenerateArticleFieldImageRequest(BaseModel):
+    article_id: int
+    field_key: str
+
+
+class GenerateArticleFieldImageResponse(BaseModel):
+    image_url: str
+    field_key: str
+    article_id: int
+
+
+@router.post('/generate-article-field', response_model=GenerateArticleFieldImageResponse)
+async def generate_article_field_image(
+    payload: GenerateArticleFieldImageRequest,
+    current_user: User = Depends(get_current_reviewer),
+    db: AsyncSession = Depends(get_db),
+) -> GenerateArticleFieldImageResponse:
+    """Generate an infographic for an article body or structured field and persist the URL."""
+    field_key = payload.field_key.strip()
+
+    if field_key == 'content_html':
+        target = 'body'
+    elif field_key in VALID_FIELD_KEYS:
+        target = 'field'
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f'Invalid field_key. Use "content_html" or one of: {", ".join(sorted(VALID_FIELD_KEYS))}',
+        )
+
+    result = await db.execute(select(Article).where(Article.id == payload.article_id))
+    article = result.scalar_one_or_none()
+    if not article:
+        raise HTTPException(status_code=404, detail='Article not found')
+
+    if target == 'body':
+        caption = _strip_html(article.content_html or '')
+        if not caption:
+            raise HTTPException(status_code=400, detail='Article body is empty')
+        context_parts = [
+            article.issue_summary or '',
+            article.why_it_matters or '',
+        ]
+        context = ' '.join(p.strip() for p in context_parts if p.strip())[:2000]
+    else:
+        caption = getattr(article, field_key, '') or ''
+        if not caption.strip():
+            raise HTTPException(status_code=400, detail=f'Field {field_key} is empty')
+        caption = caption.strip()
+        context_parts = [
+            article.issue_summary or '',
+            article.why_it_matters or '',
+            article.professional_insight or '',
+            article.call_to_action or '',
+        ]
+        context = ' '.join(p.strip() for p in context_parts if p.strip())[:2000]
+
+    try:
+        service = ImageService()
+        image_url = await service.generate_and_upload(
+            platform='article_body',
+            caption=caption[:3000],
+            article_title=article.seo_title or '',
+            article_summary=context,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f'Image generation failed: {exc}') from exc
+
+    if target == 'body':
+        article.body_image_url = image_url
+    else:
+        field_urls: dict = article.field_image_urls or {}
+        field_urls[field_key] = image_url
+        article.field_image_urls = field_urls
+
+    await db.commit()
+
+    return GenerateArticleFieldImageResponse(
+        image_url=image_url,
+        field_key=payload.field_key,
+        article_id=payload.article_id,
+    )
+
+
+def _strip_html(html: str) -> str:
+    import re
+    text = re.sub(r'<script[\s\S]*?</script>', ' ', html, flags=re.IGNORECASE)
+    text = re.sub(r'<style[\s\S]*?</style>', ' ', text, flags=re.IGNORECASE)
+    text = re.sub(r'<br\s*/?>', '\n', text, flags=re.IGNORECASE)
+    text = re.sub(r'<[^>]+>', ' ', text)
+    return re.sub(r'\s+', ' ', text).strip()

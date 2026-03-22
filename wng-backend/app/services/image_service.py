@@ -15,7 +15,26 @@ settings = get_settings()
 logger = logging.getLogger(__name__)
 
 # gpt-image-1 supported sizes: 1024x1024, 1024x1536, 1536x1024, auto
+_ARTICLE_BODY_CONFIG = {
+    'size': '1536x1024',
+    'layout': (
+        'Design a comprehensive, long-form INFOGRAPHIC summarizing an article in landscape (3:2) format.\n'
+        'Layout structure:\n'
+        '- Top: Full-width headline banner with the article title in large bold font\n'
+        '- Body: 5-6 content cards arranged in a 2-column grid, each with a mini headline '
+        'and 2-3 bullet points extracted from the article sections\n'
+        '- Bottom: Key takeaway callout box with a strong stat or quote + clinic branding bar\n'
+        'Visual style: Professional health publication aesthetic. Clean layout with generous whitespace. '
+        'Use a calming color palette (deep teal primary, soft blue accents, warm amber highlights). '
+        'Sans-serif typography with strong hierarchy. Rounded card corners, subtle shadows. '
+        'Each content card should have a colored left border or icon to distinguish sections. '
+        'Should feel like a well-designed one-page summary someone could share or print.'
+    ),
+}
+
 PLATFORM_CONFIG: dict[str, dict] = {
+    'article-body': _ARTICLE_BODY_CONFIG,
+    'article_body': _ARTICLE_BODY_CONFIG,
     'instagram': {
         'size': '1024x1024',
         'layout': (
