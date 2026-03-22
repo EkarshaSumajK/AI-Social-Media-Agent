@@ -40,13 +40,14 @@ celery_app.conf.update(
     task_track_started=True,
     broker_connection_retry_on_startup=True,
     broker_connection_retry=True,
-    broker_connection_max_retries=10,
-    broker_heartbeat=30,
+    broker_heartbeat=120,
     result_backend_transport_options={
         'retry_on_timeout': True,
+        'health_check_interval': 30,
     },
     broker_transport_options={
         'retry_on_timeout': True,
+        'health_check_interval': 30,
     },
 )
 
