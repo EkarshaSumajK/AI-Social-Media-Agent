@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     )
 
     # ── App ─────────────────────────────────────────────────────────────
-    project_name: str = 'WNG Content Platform'
+    project_name: str = 'Wellnest Intelligent Marketing (WIM)'
     environment: str = 'development'
     api_v1_prefix: str = '/api/v1'
 

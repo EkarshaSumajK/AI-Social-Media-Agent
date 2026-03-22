@@ -480,7 +480,7 @@ def _is_valid_http_url(value: str) -> bool:
 
 async def _fetch_article_payload(source_url: str) -> dict[str, str]:
     headers = {
-        'User-Agent': 'Mozilla/5.0 (compatible; WNGContentBot/1.0; +https://example.com)',
+        'User-Agent': 'Mozilla/5.0 (compatible; WIMContentBot/1.0; +https://example.com)',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     }
     transport = httpx.AsyncHTTPTransport(retries=2)

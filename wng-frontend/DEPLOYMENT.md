@@ -1,4 +1,4 @@
-# WNG Frontend - Deployment Guide
+# WIM Frontend - Deployment Guide
 
 ## Free Deployment Options
 

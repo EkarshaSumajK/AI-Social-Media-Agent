@@ -1,6 +1,6 @@
-# WNG Content Platform - Frontend
+# Wellnest Intelligent Marketing (WIM) - Frontend
 
-Reviewer dashboard for the WNG Content Platform - a Next.js application for reviewing, editing, and approving AI-generated mental health content before publication.
+Reviewer dashboard for Wellnest Intelligent Marketing (WIM) - a Next.js application for reviewing, editing, and approving AI-generated mental health content before publication.
 
 ## What's Included
 

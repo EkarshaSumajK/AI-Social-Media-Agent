@@ -89,9 +89,9 @@ export default function LoginPage() {
           </div>
 
           <CardTitle className="text-3xl leading-tight">
-            Content Intelligence
+            Wellnest Intelligent
             <br />
-            <span className="text-apple-blue">Platform</span>
+            <span className="text-apple-blue">Marketing</span>
           </CardTitle>
           <CardDescription className="mt-2 text-sm text-ink-faint">Sign in to access your content ops workspace.</CardDescription>
         </CardHeader>
@@ -139,7 +139,7 @@ export default function LoginPage() {
       </Card>
 
       <p className="absolute bottom-6 left-0 right-0 text-center text-[11px] text-ink-faint">
-        Content Intelligence Platform - Secure Access
+        Wellnest Intelligent Marketing (WIM) - Secure Access
       </p>
     </main>
   );

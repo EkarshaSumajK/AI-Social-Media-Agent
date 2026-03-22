@@ -1,6 +1,6 @@
-# WNG Content Platform - Backend
+# Wellnest Intelligent Marketing (WIM) - Backend
 
-Backend API and worker services for the WNG Content Platform - a semi-automated trending mental-health content generation and publishing platform with mandatory human review.
+Backend API and worker services for Wellnest Intelligent Marketing (WIM) - a semi-automated trending mental-health content generation and publishing platform with mandatory human review.
 
 ## What's Included
 

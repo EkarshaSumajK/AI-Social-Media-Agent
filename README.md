@@ -1,4 +1,4 @@
-# WNG Content Generator
+# Wellnest Intelligent Marketing (WIM)
 
 AI-powered content generation platform with topic collection, quality scoring, and multi-platform publishing.
 

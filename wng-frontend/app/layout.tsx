@@ -4,8 +4,8 @@ import { ThemeProvider } from '@/lib/theme';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Content Intelligence Platform',
-  description: 'Multi-platform content operations — Horizon · Connect · Parentshala',
+  title: 'Wellnest Intelligent Marketing (WIM)',
+  description: 'AI-powered content operations — Horizon · Connect · Parentshala',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
