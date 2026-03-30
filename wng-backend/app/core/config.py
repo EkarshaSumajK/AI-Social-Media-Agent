@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # ── Database & Redis (from .env) ───────────────────────────────────
     database_url_dashboard: str
-    database_schema: str = 'wng_content'
+    database_schema: str = 'public'
     redis_url: str
 
     # ── JWT ────────────────────────────────────────────────────────────
