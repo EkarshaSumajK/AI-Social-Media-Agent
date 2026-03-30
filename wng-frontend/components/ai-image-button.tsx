@@ -23,13 +23,15 @@ interface AIImageButtonProps {
   platform: string;
   title?: string;
   context?: string;
+  existingImageUrl?: string | null;
   onGenerated?: (imageUrl: string) => void;
 }
 
-export function AIImageButton({ caption, platform, title, context, onGenerated }: AIImageButtonProps) {
+export function AIImageButton({ caption, platform, title, context, existingImageUrl, onGenerated }: AIImageButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(existingImageUrl || null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -52,26 +54,32 @@ export function AIImageButton({ caption, platform, title, context, onGenerated }
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           size="sm"
           variant="outline"
           onClick={handleGenerate}
           disabled={loading || !caption.trim()}
+          className="bg-teal-600 text-white hover:bg-teal-500 border-0"
         >
           {loading ? 'Generating...' : previewImage ? 'Regenerate Image' : 'Generate AI Image'}
         </Button>
-        <span className="text-xs text-muted-foreground">{PLATFORM_LABELS[platform] || platform}</span>
         {previewImage && (
-          <Button size="sm" variant="ghost" onClick={() => setPreviewImage(previewImage)}>
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={() => setDialogOpen(true)}
+            className="bg-violet-600 text-white hover:bg-violet-500 border-0"
+          >
             Preview
           </Button>
         )}
+        <span className="text-xs text-muted-foreground">{PLATFORM_LABELS[platform] || platform}</span>
       </div>
 
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
 
-      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="capitalize">{platform} — AI Generated Infographic</DialogTitle>

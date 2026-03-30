@@ -269,6 +269,13 @@ export async function fetchPlatformContentHistory(): Promise<PlatformContentResp
   return request('/platform-content/history');
 }
 
+export async function updatePlatformContentImage(contentId: number, imageUrl: string): Promise<PlatformContentResponse> {
+  return request(`/platform-content/${contentId}/image`, {
+    method: 'PATCH',
+    body: JSON.stringify({ image_url: imageUrl }),
+  });
+}
+
 export async function publishPlatformContent(id: number, imageUrl?: string): Promise<{ id: number; platform: string; status: string; external_id?: string }> {
   return request(`/platform-content/${id}/publish`, {
     method: 'POST',

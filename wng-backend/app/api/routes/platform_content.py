@@ -38,6 +38,7 @@ class PlatformContentResponse(BaseModel):
     platform: str
     content_type: str
     content: str
+    image_url: str | None = None
     metadata: dict[str, Any] = {}
     created_at: datetime
 
@@ -100,6 +101,45 @@ async def generate_platform_content(
         platform=record.platform,
         content_type=record.content_type,
         content=record.content,
+        image_url=record.image_url,
+        metadata=record.gen_metadata or {},
+        created_at=record.created_at,
+    )
+
+
+class UpdateImageRequest(BaseModel):
+    image_url: str
+
+
+@router.patch('/{content_id}/image', response_model=PlatformContentResponse)
+async def update_platform_content_image(
+    content_id: int,
+    payload: UpdateImageRequest,
+    current_user: User = Depends(get_current_reviewer),
+    db: AsyncSession = Depends(get_db),
+) -> PlatformContentResponse:
+    """Update the image URL for a platform content generation."""
+    result = await db.execute(
+        select(PlatformContentGeneration).where(
+            PlatformContentGeneration.id == content_id,
+            PlatformContentGeneration.created_by == current_user.id,
+        )
+    )
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(status_code=404, detail='Platform content not found')
+
+    record.image_url = payload.image_url
+    await db.commit()
+    await db.refresh(record)
+
+    return PlatformContentResponse(
+        id=record.id,
+        topic=record.topic,
+        platform=record.platform,
+        content_type=record.content_type,
+        content=record.content,
+        image_url=record.image_url,
         metadata=record.gen_metadata or {},
         created_at=record.created_at,
     )
@@ -125,6 +165,7 @@ async def get_platform_content_history(
             platform=r.platform,
             content_type=r.content_type,
             content=r.content,
+            image_url=r.image_url,
             metadata=r.gen_metadata or {},
             created_at=r.created_at,
         )
