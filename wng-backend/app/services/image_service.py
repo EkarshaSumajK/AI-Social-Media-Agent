@@ -92,27 +92,44 @@ PLATFORM_CONFIG: dict[str, dict] = {
 }
 
 
-def _extract_key_points(caption: str, article_summary: str) -> str:
-    """Pull out the most infographic-worthy content from the caption and article."""
-    all_text = f"{caption}\n{article_summary}"
+def _extract_key_points(caption: str, article_summary: str, article_title: str = '') -> str:
+    """Pull out the most infographic-worthy content from the caption and article.
+    
+    Enhanced to extract more unique, specific content to differentiate images.
+    """
+    all_text = f"{article_title}\n{caption}\n{article_summary}"
 
-    # Extract any statistics or numbers
-    stats = re.findall(r'[^.]*?\d+[^.]*\.', all_text)
-    stats_text = '\n'.join(f'- {s.strip()}' for s in stats[:3]) if stats else ''
+    # Extract any statistics or numbers with more context
+    stats = re.findall(r'[^.]*?\d+[%\w\s]*[^.]*\.', all_text)
+    stats_text = '\n'.join(f'- {s.strip()}' for s in stats[:4]) if stats else ''
 
     # Extract sentences that look like tips or action items
-    tips = re.findall(r'[^.]*?(?:should|can|try|help|encourage|create|set|monitor|talk)[^.]*\.', all_text, re.IGNORECASE)
+    tips = re.findall(r'[^.]*?(?:should|can|try|help|encourage|create|set|monitor|talk|prevent|support|understand)[^.]*\.', all_text, re.IGNORECASE)
     tips_text = '\n'.join(f'- {t.strip()}' for t in tips[:4]) if tips else ''
 
+    # Extract unique phrases and proper nouns (capitalized words that aren't at sentence start)
+    unique_phrases = re.findall(r'(?:^|[.!?]\s+)([^.!?]*?(?:[A-Z][a-z]+\s+){2,}[^.!?]*?)[.!?]', all_text)
+    unique_text = '\n'.join(f'- {p.strip()}' for p in unique_phrases[:3]) if unique_phrases else ''
+
+    # Extract quoted text or emphasized content
+    quotes = re.findall(r'["\']([^"\']{20,100})["\']', all_text)
+    quotes_text = '\n'.join(f'- "{q.strip()}"' for q in quotes[:2]) if quotes else ''
+
+    # Build parts with priority to unique content
     parts = []
     if stats_text:
         parts.append(f'Key statistics:\n{stats_text}')
+    if quotes_text:
+        parts.append(f'Key insights:\n{quotes_text}')
     if tips_text:
         parts.append(f'Key tips/actions:\n{tips_text}')
+    if unique_text:
+        parts.append(f'Specific context:\n{unique_text}')
+    
     if not parts:
-        # Fallback: use first 3 sentences
-        sentences = [s.strip() for s in re.split(r'[.!?]+', all_text) if s.strip()]
-        parts.append('\n'.join(f'- {s}' for s in sentences[:4]))
+        # Fallback: use first 4 sentences with more context
+        sentences = [s.strip() for s in re.split(r'[.!?]+', all_text) if s.strip() and len(s.strip()) > 20]
+        parts.append('\n'.join(f'- {s}' for s in sentences[:5]))
 
     return '\n'.join(parts)
 
@@ -129,19 +146,24 @@ class ImageService:
         caption: str,
         article_title: str,
         article_summary: str = '',
+        unique_context: str = '',
     ) -> str:
         config = PLATFORM_CONFIG.get(platform)
         if not config:
             raise ValueError(f'Unsupported platform: {platform}')
 
         clinic_name = settings.clinic_name
-        key_points = _extract_key_points(caption, article_summary)
+        key_points = _extract_key_points(caption, article_summary, article_title)
+
+        # Add unique context to ensure different images for different articles
+        context_section = f"\nUnique article context: {unique_context}\n" if unique_context else ""
 
         return (
             f"{config['layout']}\n\n"
             f"CONTENT FOR THIS INFOGRAPHIC:\n"
             f"Topic/Headline: {article_title}\n"
-            f"Caption context: {caption}\n\n"
+            f"Caption context: {caption}\n"
+            f"{context_section}\n"
             f"Key points to feature in the infographic:\n{key_points}\n\n"
             f"Branding: {clinic_name}\n\n"
             "CRITICAL RULES:\n"
@@ -155,7 +177,8 @@ class ImageService:
             "just by looking at the image without reading the caption.\n"
             "- Keep text concise: short headlines, bullet points, not paragraphs.\n"
             "- Ensure strong color contrast for text readability.\n"
-            "- Include the clinic name in a subtle branding bar."
+            "- Include the clinic name in a subtle branding bar.\n"
+            "- Make this infographic visually DISTINCT and unique to this specific topic."
         )
 
     async def generate_image(
@@ -164,12 +187,13 @@ class ImageService:
         caption: str,
         article_title: str,
         article_summary: str = '',
+        unique_context: str = '',
     ) -> bytes:
         config = PLATFORM_CONFIG.get(platform.lower())
         if not config:
             raise ValueError(f'Unsupported platform: {platform}')
 
-        prompt = self.build_prompt(platform, caption, article_title, article_summary)
+        prompt = self.build_prompt(platform, caption, article_title, article_summary, unique_context)
 
         response = await self.client.images.generate(
             model='gpt-image-1',
@@ -222,9 +246,10 @@ class ImageService:
         caption: str,
         article_title: str,
         article_summary: str = '',
+        unique_context: str = '',
     ) -> str:
         logger.info('Generating infographic for platform=%s, article=%s', platform, article_title[:60])
-        image_bytes = await self.generate_image(platform, caption, article_title, article_summary)
+        image_bytes = await self.generate_image(platform, caption, article_title, article_summary, unique_context)
         url = await self.upload_to_cloudinary(image_bytes, platform)
         logger.info('Infographic uploaded to Cloudinary: %s', url)
         return url

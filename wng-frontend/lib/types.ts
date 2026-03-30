@@ -281,6 +281,7 @@ export interface PlatformContentResponse {
   platform: string;
   content_type: string;
   content: string;
+  image_url?: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
 }

@@ -25,6 +25,7 @@ import {
   generatePlatformContent,
   paraphraseContent,
   publishPlatformContent,
+  updatePlatformContentImage,
 } from '@/lib/api';
 import type { SocialAccount } from '@/lib/types';
 import type { PlatformContentResponse, Topic } from '@/lib/types';
@@ -247,9 +248,10 @@ interface PlatformCardProps {
   error?: string;
   onParaphrase: (text: string, platform: string) => void;
   paraphrasing: boolean;
+  onImageGenerated?: (imageUrl: string) => void;
 }
 
-function PlatformCard({ platform, result, loading, error, onParaphrase, paraphrasing }: PlatformCardProps) {
+function PlatformCard({ platform, result, loading, error, onParaphrase, paraphrasing, onImageGenerated }: PlatformCardProps) {
   const [showParaphrase, setShowParaphrase] = useState(false);
   const [style, setStyle] = useState('professional');
   const [tone, setTone] = useState('neutral');
@@ -278,6 +280,13 @@ function PlatformCard({ platform, result, loading, error, onParaphrase, paraphra
               caption={result.content}
               platform={platform.id}
               title={`${platform.label} - ${result.content_type}`}
+              existingImageUrl={result.image_url}
+              onGenerated={async (imageUrl) => {
+                // Update the platform result with the new image URL
+                await updatePlatformContentImage(result.id, imageUrl);
+                // Notify parent to update the result
+                onImageGenerated?.(imageUrl);
+              }}
             />
             <button
               type="button"
@@ -845,6 +854,12 @@ export default function TrendingPostFlowPage() {
                   error={platformErrors[p.id]}
                   onParaphrase={handleParaphrase}
                   paraphrasing={paraphrasingPlatform === p.id}
+                  onImageGenerated={(imageUrl) => {
+                    setPlatformResults((prev) => ({
+                      ...prev,
+                      [p.id]: { ...(prev[p.id] as PlatformContentResponse), image_url: imageUrl },
+                    }));
+                  }}
                 />
               </TabsContent>
             ))}

@@ -79,11 +79,14 @@ async def generate_ai_image(
 
     try:
         service = ImageService()
+        # Create unique context to differentiate images for different articles
+        unique_context = f"Article ID: {article.id}, Platform: {payload.platform}, Topic: {article.seo_title[:100]}"
         image_url = await service.generate_and_upload(
             platform=payload.platform.lower(),
             caption=caption,
             article_title=article.seo_title or '',
             article_summary=article_summary,
+            unique_context=unique_context,
         )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f'Image generation failed: {exc}') from exc
@@ -116,7 +119,9 @@ async def generate_ai_image_from_text(
     current_user: User = Depends(get_current_reviewer),
 ) -> GenerateFromTextResponse:
     """Generate a platform-specific AI infographic from raw text content. No article required."""
-    if payload.platform not in VALID_PLATFORMS:
+    # Normalize platform to uppercase for validation
+    platform_upper = payload.platform.upper()
+    if platform_upper not in VALID_PLATFORMS:
         raise HTTPException(status_code=400, detail=f'Invalid platform. Must be one of: {", ".join(sorted(VALID_PLATFORMS))}')
 
     caption = payload.caption.strip()
@@ -125,11 +130,15 @@ async def generate_ai_image_from_text(
 
     try:
         service = ImageService()
+        # Create unique context for standalone text generation
+        import time
+        unique_context = f"Generated at: {int(time.time())}, Platform: {platform_upper}"
         image_url = await service.generate_and_upload(
-            platform=payload.platform.lower(),
+            platform=platform_upper.lower(),  # ImageService expects lowercase
             caption=caption,
             article_title=payload.title.strip() or 'Mental Health Awareness',
             article_summary=payload.context.strip(),
+            unique_context=unique_context,
         )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f'Image generation failed: {exc}') from exc
@@ -199,11 +208,15 @@ async def generate_article_field_image(
 
     try:
         service = ImageService()
+        # Create unique context to differentiate field images
+        import time
+        unique_context = f"Article ID: {article.id}, Field: {field_key}, Generated: {int(time.time())}"
         image_url = await service.generate_and_upload(
             platform='article_body',
             caption=caption[:3000],
             article_title=article.seo_title or '',
             article_summary=context,
+            unique_context=unique_context,
         )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f'Image generation failed: {exc}') from exc
